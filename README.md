@@ -20,7 +20,7 @@ Try it out at [py.mkyu.one](https://py.mkyu.one/)!
 ## Why Inscribe?
 Designed to be minimal, fast, and distraction-free, ideal for learning or quick Python experiments directly in your browser.
 
-[Learn more about V2](https://log.mkyu.one/posts/inscribe/newinscribe/)
+[Learn more about V2](https://log.mkyu.one/posts/inscribe/newinscribe/) <br>
 [Learn more about Inscribe Editor](https://log.mkyu.one/posts/inscribe/inscripython/)
-
+<br>
 ![Screenshot](https://log.mkyu.one/posts/inscribe/inscribe2.png)
