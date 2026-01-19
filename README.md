@@ -1,5 +1,4 @@
 # Inscribe Editor
----
 A single-file lightweight in-browser Python editor and executor using Pyodide.
 Try it out at [py.mkyu.one](https://py.mkyu.one/)!
 
