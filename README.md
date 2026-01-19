@@ -23,9 +23,14 @@ Designed to be minimal, fast, and distraction-free, ideal for learning or quick 
 [Learn more about V2](https://log.mkyu.one/posts/inscribe/newinscribe/) <br>
 [Learn more about Inscribe Editor](https://log.mkyu.one/posts/inscribe/inscripython/)
 <br>
+
 ## UI Screenshot
-### V2
-![V2Screenshot](https://log.mkyu.one/posts/inscribe/inscribe2.png)
+### v2
+<p align="center">
+  <img src="https://log.mkyu.one/posts/inscribe/inscribe2.png" width="650">
+</p>
 
 ### Old
-![OldScreenshot](https://log.mkyu.one/posts/inscribe/inscribeold.png)
+<p align="center">
+  <img src="https://log.mkyu.one/posts/inscribe/inscribeold.png" width="650">
+</p>
