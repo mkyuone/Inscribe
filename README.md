@@ -1,5 +1,5 @@
 # Inscribe Editor
-A single-file lightweight in-browser Python editor and executor using Pyodide.
+A lightweight in-browser Python editor and executor using Pyodide.
 Try it out at [py.mkyu.one](https://py.mkyu.one/)!  
 Feel free to [host this on your own GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 
@@ -24,6 +24,21 @@ Designed to be minimal, fast, and distraction-free, ideal for learning or quick 
 [Learn more about V2](https://log.mkyu.one/posts/inscribe/newinscribe/) <br>
 [Learn more about Inscribe Editor](https://log.mkyu.one/posts/inscribe/inscripython/)
 <br>
+
+## Local assets
+- External JS/CSS/fonts are vendored under `assets/` for offline/local use.
+- Pyodide files live in `assets/vendor/pyodide/` and are loaded locally.
+
+## Development
+Build the TypeScript into `dist/`:
+```sh
+npm exec --yes --package typescript@5.4.5 tsc -- --project tsconfig.json
+```
+
+Serve locally (Pyodide requires HTTP, not `file://`):
+```sh
+python3 -m http.server
+```
 
 ## UI Screenshot
 ### v2

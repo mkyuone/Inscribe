@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Inscribe Editor v2 by Mark Yu -->
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inscribe Editor</title>
+
+<!-- Local fonts -->
+<link rel="stylesheet" href="assets/fonts/fonts.css"/>
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="assets/vendor/codemirror/codemirror.min.css"/>
+<link rel="stylesheet" href="assets/vendor/codemirror/eclipse.min.css"/>
+
+<!-- App styles -->
+<link rel="stylesheet" href="assets/css/app.css"/>
+
+<!-- Pyodide + CodeMirror scripts -->
+<script defer data-cfasync="false" src="assets/vendor/pyodide/pyodide.js"></script>
+<script defer data-cfasync="false" src="assets/vendor/codemirror/codemirror.min.js"></script>
+<script defer data-cfasync="false" src="assets/vendor/codemirror/python.min.js"></script>
+
+<style id="dynamicStyles"></style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="headerInner">
+        <div class="brand">
+          <span class="material-icons" aria-hidden="true">code</span>
+          <div class="brandText">
+            <h1>Inscribe Editor</h1>
+            <div class="sub">In-browser Python editor and executor.</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <!-- Run split button + config menu -->
+          <div class="runGroup menuWrap" id="runGroup">
+            <button class="toolBtn primary" id="runBtn" type="button" title="Run All (Cmd/Ctrl + Enter)">
+              <span class="material-icons" aria-hidden="true">play_arrow</span>
+              <span class="toolLabel" id="runLabel" style="opacity:1; transform:none;">Run All</span>
+
+              <!-- Shortcut pill only -->
+              <span class="runMeta">
+                <span class="keyChip" id="hintRun">Ctrl Enter</span>
+              </span>
+            </button>
+
+            <button class="toolBtn primary" id="runModeBtn" type="button" title="Run options"
+              aria-haspopup="menu" aria-expanded="false">
+              <span class="material-icons" aria-hidden="true">arrow_drop_down</span>
+            </button>
+
+            <div class="menu" id="runMenu" role="menu" aria-label="Run options">
+              <button class="menuItem" id="runAllBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">description</span>
+                <span class="miLabel">Run All</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
+
+              <button class="menuItem" id="runSelBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">select_all</span>
+                <span class="miLabel">Run Selection</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
+
+              <button class="menuItem" id="runCellBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">view_agenda</span>
+                <span class="miLabel">Run Cell</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <button class="toolBtn collapse" id="openBtn" type="button" title="Open (Cmd/Ctrl + O)" aria-label="Open file">
+            <span class="material-icons" aria-hidden="true">folder_open</span>
+            <span class="toolLabel">Open</span>
+            <span class="hintPill" id="hintOpen">⌘ O</span>
+          </button>
+
+          <button class="toolBtn collapse" id="saveBtn" type="button" title="Save (Cmd/Ctrl + S)" aria-label="Save file">
+            <span class="material-icons" aria-hidden="true">save</span>
+            <span class="toolLabel">Save</span>
+            <span class="hintPill" id="hintSave">⌘ S</span>
+          </button>
+
+          <div class="menuWrap">
+            <button class="toolBtn collapse" id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="More">
+              <span class="material-icons" aria-hidden="true">more_horiz</span>
+              <span class="toolLabel">More</span>
+            </button>
+
+            <div class="menu" id="moreMenu" role="menu" aria-label="More actions">
+              <button class="menuItem" id="resetBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">restart_alt</span>
+                <span class="miLabel">Reset</span>
+              </button>
+
+              <button class="menuItem" id="settingsBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">tune</span>
+                <span class="miLabel">Settings</span>
+                <span class="miHint" id="hintSettings">⌘ ,</span>
+              </button>
+
+              <button class="menuItem" id="aboutBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">info_outline</span>
+                <span class="miLabel">About</span>
+              </button>
+
+              <a class="menuItem" role="menuitem" href="https://github.com/mkyyu/python-web-ide" target="_blank" rel="noreferrer">
+                <span class="material-icons" aria-hidden="true">open_in_new</span>
+                <span class="miLabel">View source</span>
+              </a>
+            </div>
+          </div>
+
+          <input type="file" id="fileInput" style="display:none;" accept=".py,.txt"/>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="split">
+        <section class="pane editorPane" id="editorPane">
+          <div class="paneHeader">
+            <div class="paneLeft">
+              <div class="paneTitle"><span class="dot"></span>Editor</div>
+              <div class="paneMeta" id="fileMeta">untitled.py</div>
+            </div>
+            <div class="paneActions">
+              <button class="iconBtn" id="wrapBtn" type="button" title="Toggle line wrap">
+                <span class="material-icons" aria-hidden="true">wrap_text</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="editor">print("Hello, World!")</textarea>
+        </section>
+
+        <div class="resizer" id="dragbar" aria-label="Resize panels"></div>
+
+        <section class="pane consolePane" id="consolePane">
+          <div class="paneHeader">
+            <div class="paneLeft">
+              <div class="paneTitle"><span class="dot"></span>Output</div>
+            </div>
+            <div class="paneActions">
+              <button class="iconBtn danger" id="clearConsoleBtn" type="button" title="Clear console (Undo for 3s)">
+                <span class="material-icons" aria-hidden="true">delete</span>
+              </button>
+              <button class="iconBtn undo" id="undoClearBtn" type="button" title="Undo clear" style="display:none;">
+                <span class="material-icons" aria-hidden="true">undo</span>
+              </button>
+            </div>
+          </div>
+          <div id="console" role="log" aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="statusbar">
+      <div class="sbLeft">
+        <span class="sbItem good" id="sbRun"><span class="sbDot"></span><strong>Ready</strong></span>
+        <span class="sbItem good" id="sbDirty"><span class="sbDot"></span><strong>Saved</strong></span>
+        <span class="sbItem bad" id="sbPy"><span class="sbDot"></span><strong>Pyodide: not loaded</strong></span>
+      </div>
+
+      <div class="sbRight">
+        <span class="sbItem"><strong class="sbMono" id="sbFile">untitled.py</strong></span>
+        <span class="sbItem"><strong class="sbMono" id="sbPos">Ln 1, Col 1</strong></span>
+        <span class="sbItem"><strong class="sbMono" id="sbSel">Sel 0</strong></span>
+        <span class="sbItem"><strong class="sbMono" id="sbClock">--:--:--</strong></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- About modal -->
+  <div class="overlay" id="aboutOverlay" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="modal">
+      <h2 id="aboutTitle">Inscribe Editor</h2>
+      <p>A lightweight in-browser Python editor and executor using Pyodide.</p>
+      <p>
+        This software comes with absolutely no warranty.<br/>
+        Licensed under the MIT License.
+      </p>
+      <p style="color: rgba(15,23,42,0.70);">
+        Copyright © 2023–2026 Mark Yu.
+      </p>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="closeAboutBtn" type="button">Close</button>
+        <a class="toolBtn primary" href="https://github.com/mkyyu/python-web-ide" target="_blank" rel="noreferrer">
+          <span class="material-icons" aria-hidden="true">open_in_new</span>
+          <span style="opacity:1;transform:none;">View source</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <h2 id="settingsTitle">Settings</h2>
+      <p>Quiet controls that improve long-session comfort. Stored locally in your browser.</p>
+
+      <div class="prefs">
+        <div class="prefItem">
+          <div class="prefTitle">Font sizes</div>
+
+          <div class="prefRow">
+            <label for="editorSizeRange">Editor size</label>
+            <div class="rangeWrap">
+              <input id="editorSizeRange" type="range" min="12" max="18" step="0.25" />
+              <span class="chip" id="editorSizeLabel">14.00px</span>
+            </div>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="prefRow">
+            <label for="consoleSizeRange">Console size</label>
+            <div class="rangeWrap">
+              <input id="consoleSizeRange" type="range" min="12" max="18" step="0.25" />
+              <span class="chip" id="consoleSizeLabel">13.50px</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="prefItem">
+          <div class="prefTitle">Editor behavior</div>
+
+          <div class="prefRow">
+            <label class="toggle" for="wrapToggle">
+              <input id="wrapToggle" type="checkbox" />
+              <span>Line wrap</span>
+            </label>
+
+            <span class="paneMeta" style="max-width:none;">Also available from the editor header</span>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <p style="margin-bottom:0;">
+            <span class="paneMeta" style="max-width:none; white-space:normal;">
+              Run selection if highlighted. Use <b># %%</b> to define cells.
+            </span>
+          </p>
+        </div>
+
+        <div class="prefItem">
+          <div class="prefTitle">Shortcuts</div>
+          <table class="shortcuts" aria-label="Keyboard shortcuts">
+            <tbody id="shortcutBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="closeSettingsBtn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script type="module" src="dist/main.js" defer></script>
+</body>
+</html>
