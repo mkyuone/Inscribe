@@ -21,9 +21,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css"/>
 
 <!-- Pyodide + CodeMirror scripts -->
-<!-- IMPORTANT:
-     - data-cfasync="false" prevents Cloudflare Rocket Loader from breaking script order
--->
 <script defer data-cfasync="false" src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 <script defer data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
 <script defer data-cfasync="false" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
@@ -144,7 +141,7 @@
     color:var(--muted);
   }
 
-  /* Toolbar (compact + expand on hover/focus) */
+  /* Toolbar */
   .toolbar{
     display:flex;
     align-items:center;
@@ -193,17 +190,13 @@
     overflow:hidden;
   }
 
-  /* Expand on keyboard focus (non-sticky with our JS blur/refocus) */
   .toolBtn.collapse:focus-visible,
   .toolBtn.collapse:focus-within{
     max-width:180px;
   }
 
-  /* Expand on hover ONLY for devices that truly support hover (prevents sticky hover on touch) */
   @media (hover:hover) and (pointer:fine){
-    .toolBtn.collapse:hover{
-      max-width:180px;
-    }
+    .toolBtn.collapse:hover{ max-width:180px; }
   }
 
   .toolLabel{
@@ -212,14 +205,12 @@
     transition:opacity var(--tFast) var(--ease), transform var(--tFast) var(--ease);
   }
 
-  /* Show label on focus */
   .toolBtn.collapse:focus-visible .toolLabel,
   .toolBtn.collapse:focus-within .toolLabel{
     opacity:1;
     transform:translateX(0);
   }
 
-  /* Show label on hover only on hover-capable devices */
   @media (hover:hover) and (pointer:fine){
     .toolBtn.collapse:hover .toolLabel{
       opacity:1;
@@ -240,14 +231,12 @@
     transform:translateX(-2px);
     transition:opacity var(--tFast) var(--ease), transform var(--tFast) var(--ease);
   }
+  .hintPill.noAuto{ margin-left:0; }
 
-  /* Show hint on focus */
   .toolBtn.collapse:focus-visible .hintPill{
     opacity:1;
     transform:translateX(0);
   }
-
-  /* Show hint on hover only on hover-capable devices */
   @media (hover:hover) and (pointer:fine){
     .toolBtn.collapse:hover .hintPill{
       opacity:1;
@@ -255,7 +244,7 @@
     }
   }
 
-  /* Primary Run button (always expanded) */
+  /* Primary Run button */
   .toolBtn.primary{
     background:var(--accent);
     border-color:rgba(37,99,235,0.28);
@@ -274,6 +263,11 @@
     opacity:1;
     transform:none;
   }
+  .toolBtn.primary .hintPill.modePill{
+    background:rgba(255,255,255,0.22);
+    border-color:rgba(255,255,255,0.18);
+    color:rgba(255,255,255,0.96);
+  }
 
   .toolBtn:disabled{
     opacity:0.55;
@@ -282,13 +276,33 @@
     box-shadow:none!important;
   }
 
-  /* Overflow menu */
+  /* Split run group */
+  .runGroup{
+    display:inline-flex;
+    align-items:center;
+    gap:0;
+    position:relative;
+  }
+  .runGroup #runBtn{
+    border-top-right-radius:0;
+    border-bottom-right-radius:0;
+  }
+  .runGroup #runModeBtn{
+    width:40px;
+    justify-content:center;
+    padding:0;
+    border-top-left-radius:0;
+    border-bottom-left-radius:0;
+    border-left:1px solid rgba(255,255,255,0.18);
+  }
+
+  /* Overflow menus */
   .menuWrap{ position:relative; }
   .menu{
     position:absolute;
     top:calc(100% + 8px);
     right:0;
-    min-width:220px;
+    min-width:240px;
     background:rgba(255,255,255,0.92);
     border:1px solid rgba(15,23,42,0.12);
     border-radius:14px;
@@ -331,6 +345,35 @@
     background:rgba(15,23,42,0.04);
     color:rgba(15,23,42,0.70);
   }
+  .menuItem .runDefaultHint{ visibility:hidden; }
+  .menuItem.activeMode{
+    background:rgba(37,99,235,0.12);
+    border-color:rgba(37,99,235,0.20);
+  }
+  .menuItem.activeMode .runDefaultHint{ visibility:visible; }
+
+  /* Run menu alignment */
+#runMenu{
+  min-width:270px; /* gives label enough space */
+}
+
+#runMenu .menuItem .material-icons{
+  width:22px;              /* consistent icon column */
+  flex:0 0 22px;
+  text-align:center;
+}
+
+#runMenu .miLabel{
+  min-width:0;             /* required for ellipsis in flex layouts */
+  white-space:nowrap;      /* stops "Run selection" wrapping */
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#runMenu .miHint{
+  flex:0 0 auto;           /* keep Default pill stable */
+}
+
 
   /* Main */
   main{
@@ -551,7 +594,7 @@
     max-width:40vw;
   }
 
-  /* Modals (overlay scrolls, modal doesn't) */
+  /* Modals */
   .overlay{
     position:fixed;
     inset:0;
@@ -721,12 +764,40 @@
         </div>
 
         <div class="toolbar">
-          <!-- Run (always expanded primary) -->
-          <button class="toolBtn primary" id="runBtn" type="button" title="Run (Cmd/Ctrl + Enter)">
-            <span class="material-icons" aria-hidden="true">play_arrow</span>
-            <span class="toolLabel" style="opacity:1; transform:none;">Run</span>
-            <span class="hintPill" id="hintRun">⌘ Enter</span>
-          </button>
+          <!-- Run split button and config menu -->
+          <div class="runGroup menuWrap" id="runGroup">
+            <button class="toolBtn primary" id="runBtn" type="button" title="Run (Cmd/Ctrl + Enter)">
+              <span class="material-icons" aria-hidden="true">play_arrow</span>
+              <span class="toolLabel" style="opacity:1; transform:none;">Run</span>
+              <span class="hintPill modePill" id="runModePill">All</span>
+              <span class="hintPill noAuto" id="hintRun">⌘ Enter</span>
+            </button>
+
+            <button class="toolBtn primary" id="runModeBtn" type="button" title="Run options"
+              aria-haspopup="menu" aria-expanded="false">
+              <span class="material-icons" aria-hidden="true">arrow_drop_down</span>
+            </button>
+
+            <div class="menu" id="runMenu" role="menu" aria-label="Run options">
+              <button class="menuItem" id="runAllBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">description</span>
+                <span class="miLabel">Run all</span>
+                <span class="miHint runDefaultHint">Default</span>
+              </button>
+
+              <button class="menuItem" id="runSelBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">text_select_start</span>
+                <span class="miLabel">Run selection</span>
+                <span class="miHint runDefaultHint">Default</span>
+              </button>
+
+              <button class="menuItem" id="runCellBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">view_agenda</span>
+                <span class="miLabel">Run cell</span>
+                <span class="miHint runDefaultHint">Default</span>
+              </button>
+            </div>
+          </div>
 
           <!-- Compact: expands on hover/focus -->
           <button class="toolBtn collapse" id="openBtn" type="button" title="Open (Cmd/Ctrl + O)" aria-label="Open file">
@@ -922,8 +993,6 @@
 (() => {
   "use strict";
 
-  /* 
-     Global crash logging */
   window.addEventListener("error", (e) => {
     console.error("[Global error]", e.error || e.message);
   });
@@ -931,7 +1000,6 @@
     console.error("[Unhandled rejection]", e.reason);
   });
 
-  /* Wait for dependencies (prevents random CDN/script-order failures) */
   function waitForGlobals(timeoutMs = 9000){
     return new Promise((resolve, reject) => {
       const start = performance.now();
@@ -947,7 +1015,6 @@
     });
   }
 
-  /* Safe localStorage wrapper (prevents fatal crashes in restricted modes) */
   const safeLS = {
     get(key){
       try { return localStorage.getItem(key); } catch { return null; }
@@ -960,14 +1027,12 @@
     }
   };
 
-  /* Boot once */
   let booted = false;
 
   async function boot(){
     if (booted) return;
     booted = true;
 
-    // Fallback in case boot fails
     const consoleFallback = document.getElementById("console");
     const runBtnFallback = document.getElementById("runBtn");
     function showFatal(msg){
@@ -995,15 +1060,22 @@
       return;
     }
 
-    /* Storage keys */
     const LS = {
       DRAFT: "inscribe_draft_code_v5",
       PREFS: "inscribe_prefs_v5",
-      FILENAME: "inscribe_filename_v5"
+      FILENAME: "inscribe_filename_v5",
+      RUNMODE: "inscribe_runmode_v5"
     };
 
     /* DOM refs */
     const runBtn = document.getElementById("runBtn");
+    const runModeBtn = document.getElementById("runModeBtn");
+    const runMenu = document.getElementById("runMenu");
+    const runAllBtn = document.getElementById("runAllBtn");
+    const runSelBtn = document.getElementById("runSelBtn");
+    const runCellBtn = document.getElementById("runCellBtn");
+    const runModePill = document.getElementById("runModePill");
+
     const openBtn = document.getElementById("openBtn");
     const saveBtn = document.getElementById("saveBtn");
     const fileInput = document.getElementById("fileInput");
@@ -1051,12 +1123,12 @@
 
     const dynamicStyles = document.getElementById("dynamicStyles");
 
-    /* Single source of truth for state (prevents TDZ errors) */
     const state = {
       isRunning: false,
       isDirty: false,
       pyodideReady: false,
-      pyodideInstance: null
+      pyodideInstance: null,
+      runMode: safeLS.get(LS.RUNMODE) || "all" // all | selection | cell
     };
 
     /* Utilities */
@@ -1092,7 +1164,17 @@
       if (keepBanner) addConsoleLine("Ready. Run to load Pyodide.", { dim:true });
     }
 
-    /* Status bar logic */
+    function formatDuration(ms){
+      if (!Number.isFinite(ms)) return "--";
+      if (ms < 1000) return `${ms.toFixed(ms < 100 ? 1 : 0)} ms`;
+      const s = ms / 1000;
+      if (s < 60) return `${s.toFixed(s < 10 ? 2 : 1)} s`;
+      const m = Math.floor(s / 60);
+      const rem = s % 60;
+      return `${m}m ${rem.toFixed(1)}s`;
+    }
+
+    /* Status bar */
     function setClass(el, s){
       el.classList.remove("good","warn","bad");
       el.classList.add(s);
@@ -1143,12 +1225,51 @@
       lineWrapping: !!prefs.lineWrap
     });
 
-    /* unsticks toolbar expanded state after native dialogs */
+    /* Unstick toolbar expanded state after native dialogs */
     function refocusEditor(){
-      // blur toolbar buttons so :focus-visible doesn't keep them expanded
-      [openBtn, saveBtn, moreBtn].forEach(b => b && b.blur());
-      // Return caret to editor
+      [openBtn, saveBtn, moreBtn, runModeBtn].forEach(b => b && b.blur());
       requestAnimationFrame(() => editor.focus());
+    }
+
+    /* Run mode toggles */
+    function getRunModeLabel(mode){
+      if (mode === "selection") return "Selection";
+      if (mode === "cell") return "Cell";
+      return "All";
+    }
+
+    function updateRunModeUI(){
+      const label = getRunModeLabel(state.runMode);
+      runModePill.textContent = label;
+
+      // Active item highlight
+      [runAllBtn, runSelBtn, runCellBtn].forEach(b => b.classList.remove("activeMode"));
+      const map = { all: runAllBtn, selection: runSelBtn, cell: runCellBtn };
+      const active = map[state.runMode];
+      if (active) active.classList.add("activeMode");
+
+      // Make Run title reflect the current config
+      runBtn.title = `Run ${label} (Cmd/Ctrl + Enter)`;
+    }
+
+    function setRunMode(mode){
+      const allowed = ["all","selection","cell"];
+      state.runMode = allowed.includes(mode) ? mode : "all";
+      safeLS.set(LS.RUNMODE, state.runMode);
+      updateRunModeUI();
+      addConsoleLine(`Run mode set to: ${getRunModeLabel(state.runMode)}`, { dim:true });
+    }
+
+    function getCodeForMode(mode){
+      if (mode === "cell") return getCurrentCellCode();
+
+      if (mode === "selection") {
+        if (!editor.somethingSelected()) return null;
+        return editor.getSelection();
+      }
+
+      // all
+      return editor.getValue();
     }
 
     /* Filename + dirty state + draft */
@@ -1261,12 +1382,7 @@ builtins.input = custom_input
       state.pyodideReady = false;
       addConsoleLine("Environment reset. Next run will reload Pyodide.", { dim:true });
       updateStatusBar();
-      refocusEditor(); // feels better
-    }
-
-    function getSelectedOrAllCode(){
-      if (editor.somethingSelected()) return editor.getSelection();
-      return editor.getValue();
+      refocusEditor();
     }
 
     function getCurrentCellCode(){
@@ -1292,24 +1408,32 @@ builtins.input = custom_input
       return editor.getRange({ line:startLine, ch:0 }, { line:endLine, ch:0 });
     }
 
-    async function runCode(mode="selection_or_all"){
+    async function runCode(mode="all"){
       if (state.isRunning) return;
       state.isRunning = true;
       updateStatusBar();
+
       runBtn.disabled = true;
+      runModeBtn.disabled = true;
+
+      let didExecute = false;
+      let ok = false;
 
       try{
         if (!state.pyodideInstance) await initializePyodide();
 
-        addConsoleLine("Executing…", { dim:true });
-
-        const code = (mode === "cell") ? getCurrentCellCode() : getSelectedOrAllCode();
+        const code = getCodeForMode(mode);
         if (!code || !code.trim()) {
-          addConsoleLine("Nothing to run.", { dim:true });
+          addConsoleLine(mode === "selection" ? "No selection to run." : "Nothing to run.", { dim:true });
           return;
         }
 
+        addConsoleLine(`Executing (${getRunModeLabel(mode)})…`, { dim:true });
+        const t0 = performance.now();
+
         await state.pyodideInstance.runPythonAsync(code);
+        didExecute = true;
+        ok = true;
 
         const output = state.pyodideInstance.runPython("sys.stdout.getvalue()");
         if (output && output.trim().length) {
@@ -1320,22 +1444,37 @@ builtins.input = custom_input
 
         state.pyodideInstance.runPython("sys.stdout.truncate(0); sys.stdout.seek(0)");
 
+        const dt = performance.now() - t0;
+        addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim:true });
+
       } catch (err) {
+        didExecute = true;
+        ok = false;
+
         const msg = err?.toString?.() ?? String(err);
         msg.split("\n").forEach(l => {
           if (l.trim()) addConsoleLine(l, { error:true });
         });
+
+        addConsoleLine("Finished with errors.", { dim:true });
       } finally {
         state.isRunning = false;
         updateStatusBar();
+
         runBtn.disabled = false;
-        refocusEditor(); // keeps UI clean after run
+        runModeBtn.disabled = false;
+
+        refocusEditor();
       }
+    }
+
+    function runDefault(){
+      // Cmd/Ctrl+Enter uses the configured run mode
+      return runCode(state.runMode);
     }
 
     /* File open/save */
     function openFile(){
-      // blur before native dialog (helps reduce stuck focus in some browsers)
       openBtn.blur();
       fileInput.value = "";
       fileInput.click();
@@ -1345,7 +1484,7 @@ builtins.input = custom_input
       const file = e.target.files && e.target.files[0];
       if (!file) {
         addConsoleLine("Open cancelled.", { dim:true });
-        refocusEditor(); // collapses any stuck expanded button
+        refocusEditor();
         return;
       }
       const reader = new FileReader();
@@ -1355,14 +1494,12 @@ builtins.input = custom_input
         lastSavedContent = editor.getValue();
         setDirty(false);
         addConsoleLine(`Loaded: ${file.name}`, { dim:true });
-
-        refocusEditor(); // important
+        refocusEditor();
       };
       reader.readAsText(file);
     });
 
     function saveFile(){
-      // blur before triggering download
       saveBtn.blur();
 
       const code = editor.getValue();
@@ -1443,7 +1580,7 @@ builtins.input = custom_input
       hintSettings.textContent = `${mod} ,`;
 
       const shortcuts = [
-        { keys:[mod,"Enter"], desc:"Run selection (or full file)" },
+        { keys:[mod,"Enter"], desc:"Run (uses Run Mode config)" },
         { keys:[mod,"Shift","Enter"], desc:"Run current cell (# %%)" },
         { keys:[mod,"S"], desc:"Save file" },
         { keys:[mod,"O"], desc:"Open file" },
@@ -1465,6 +1602,7 @@ builtins.input = custom_input
       if (e.key === "Escape") {
         closeAnyModal();
         closeMenu();
+        closeRunMenu();
         refocusEditor();
         return;
       }
@@ -1473,7 +1611,7 @@ builtins.input = custom_input
 
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        runCode("selection_or_all");
+        runDefault();
         return;
       }
       if (e.key === "Enter" && e.shiftKey) {
@@ -1498,27 +1636,47 @@ builtins.input = custom_input
       }
     }, { passive:false });
 
-    /*  Overflow menu behavior */
+    /* More menu */
     function openMenu(){
+      closeRunMenu();
       moreMenu.classList.add("active");
       moreBtn.setAttribute("aria-expanded", "true");
     }
     function closeMenu(){
       moreMenu.classList.remove("active");
       moreBtn.setAttribute("aria-expanded", "false");
-      moreBtn.blur(); // prevents sticky expanded state on More button
+      moreBtn.blur();
     }
     function toggleMenu(){
       if (moreMenu.classList.contains("active")) closeMenu();
       else openMenu();
     }
 
+    /* Run menu */
+    function openRunMenu(){
+      closeMenu();
+      runMenu.classList.add("active");
+      runModeBtn.setAttribute("aria-expanded", "true");
+    }
+    function closeRunMenu(){
+      runMenu.classList.remove("active");
+      runModeBtn.setAttribute("aria-expanded", "false");
+      runModeBtn.blur();
+    }
+    function toggleRunMenu(){
+      if (runMenu.classList.contains("active")) closeRunMenu();
+      else openRunMenu();
+    }
+
     document.addEventListener("click", (e) => {
-      const within = moreMenu.contains(e.target) || moreBtn.contains(e.target);
-      if (!within) closeMenu();
+      const withinMore = moreMenu.contains(e.target) || moreBtn.contains(e.target);
+      if (!withinMore) closeMenu();
+
+      const withinRun = runMenu.contains(e.target) || runModeBtn.contains(e.target);
+      if (!withinRun) closeRunMenu();
     });
 
-    /* Preferences apply (dynamic styles) */
+    /* Preferences apply */
     function applyPrefs(){
       dynamicStyles.textContent = `
         .CodeMirror{ font-size:${prefs.editorFontSize}px; }
@@ -1567,7 +1725,13 @@ builtins.input = custom_input
     document.addEventListener("mouseup", ()=>{ dragging = false; });
 
     /* Wire buttons */
-    runBtn.addEventListener("click", ()=> runCode("selection_or_all"));
+    runBtn.addEventListener("click", runDefault);
+    runModeBtn.addEventListener("click", toggleRunMenu);
+
+    runAllBtn.addEventListener("click", ()=> { setRunMode("all"); closeRunMenu(); refocusEditor(); });
+    runSelBtn.addEventListener("click", ()=> { setRunMode("selection"); closeRunMenu(); refocusEditor(); });
+    runCellBtn.addEventListener("click", ()=> { setRunMode("cell"); closeRunMenu(); refocusEditor(); });
+
     openBtn.addEventListener("click", openFile);
     saveBtn.addEventListener("click", saveFile);
 
@@ -1608,7 +1772,8 @@ builtins.input = custom_input
     updateStatusBar();
     updateCursorStatus();
     updateClock();
-    refocusEditor(); // start with editor focused
+    updateRunModeUI();
+    refocusEditor();
   }
 
   if (document.readyState === "loading") {
