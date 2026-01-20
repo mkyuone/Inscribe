@@ -18,6 +18,18 @@ Feel free to [host this on your own GitHub Pages](https://docs.github.com/en/pag
 - Better handling of partial code execution
 - Persistent editor preferences via `localStorage`
 
+## Modular TypeScript refactor (in progress)
+A new Vite + TypeScript scaffold lives at the repo root to break the app into
+modules and support local vendor assets. Start the dev server with:
+
+```bash
+npm install
+npm run dev
+```
+
+Vendor assets should be placed under `public/vendor` (see
+`public/vendor/README.md` for the suggested layout).
+
 ## Why Inscribe?
 Designed to be minimal, fast, and distraction-free, ideal for learning or quick Python experiments directly in your browser.
 
