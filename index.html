@@ -275,22 +275,12 @@
     border-left:1px solid rgba(255,255,255,0.18);
   }
 
-  /* Run selector chips */
+  /* Run meta: keep ONLY shortcut pill */
   .runMeta{
     margin-left:auto;
     display:inline-flex;
     align-items:center;
     gap:8px;
-  }
-
-  .modeChip{
-    font-family:"IBM Plex Mono";
-    font-size:11px;
-    padding:2px 8px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.22);
-    background:rgba(255,255,255,0.20);
-    color:rgba(255,255,255,0.96);
   }
 
   .keyChip{
@@ -384,28 +374,27 @@
     justify-self:end;
   }
 
-/* Right-side badges in run menu */
-#runMenu .miRight{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  justify-self:end;
-}
+  /* Right-side badges in run menu */
+  #runMenu .miRight{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    justify-self:end;
+  }
 
-/* Default badge stays only on Run all */
-#runMenu .defaultBadge{ display:none; }
-#runAllBtn .defaultBadge{ display:inline-flex; }
+  /* Default badge stays only on Run All */
+  #runMenu .defaultBadge{ display:none; }
+  #runAllBtn .defaultBadge{ display:inline-flex; }
 
-/* Checkmark shows active mode */
-#runMenu .miCheck{
-  display:none;
-  font-size:18px;
-  color:rgba(37,99,235,0.95);
-}
-#runMenu .menuItem.activeMode .miCheck{
-  display:inline-block;
-}
-
+  /* Checkmark shows active mode */
+  #runMenu .miCheck{
+    display:none;
+    font-size:18px;
+    color:rgba(37,99,235,0.95);
+  }
+  #runMenu .menuItem.activeMode .miCheck{
+    display:inline-block;
+  }
 
   .menuItem.activeMode{
     background:rgba(37,99,235,0.12);
@@ -795,12 +784,12 @@
         <div class="toolbar">
           <!-- Run split button + config menu -->
           <div class="runGroup menuWrap" id="runGroup">
-            <button class="toolBtn primary" id="runBtn" type="button" title="Run (Cmd/Ctrl + Enter)">
+            <button class="toolBtn primary" id="runBtn" type="button" title="Run All (Cmd/Ctrl + Enter)">
               <span class="material-icons" aria-hidden="true">play_arrow</span>
-              <span class="toolLabel" style="opacity:1; transform:none;">Run</span>
+              <span class="toolLabel" id="runLabel" style="opacity:1; transform:none;">Run All</span>
 
+              <!-- Shortcut pill only -->
               <span class="runMeta">
-                <span class="modeChip" id="runModePill">All</span>
                 <span class="keyChip" id="hintRun">Ctrl Enter</span>
               </span>
             </button>
@@ -810,35 +799,34 @@
               <span class="material-icons" aria-hidden="true">arrow_drop_down</span>
             </button>
 
-<div class="menu" id="runMenu" role="menu" aria-label="Run options">
-  <button class="menuItem" id="runAllBtn" type="button" role="menuitem">
-    <span class="material-icons" aria-hidden="true">description</span>
-    <span class="miLabel">Run all</span>
-    <span class="miRight" aria-hidden="true">
-      <span class="miHint defaultBadge">Default</span>
-      <span class="material-icons miCheck">done</span>
-    </span>
-  </button>
+            <div class="menu" id="runMenu" role="menu" aria-label="Run options">
+              <button class="menuItem" id="runAllBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">description</span>
+                <span class="miLabel">Run All</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
 
-  <button class="menuItem" id="runSelBtn" type="button" role="menuitem">
-    <span class="material-icons" aria-hidden="true">select_all</span>
-    <span class="miLabel">Run selection</span>
-    <span class="miRight" aria-hidden="true">
-      <span class="miHint defaultBadge">Default</span>
-      <span class="material-icons miCheck">done</span>
-    </span>
-  </button>
+              <button class="menuItem" id="runSelBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">select_all</span>
+                <span class="miLabel">Run Selection</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
 
-  <button class="menuItem" id="runCellBtn" type="button" role="menuitem">
-    <span class="material-icons" aria-hidden="true">view_agenda</span>
-    <span class="miLabel">Run cell</span>
-    <span class="miRight" aria-hidden="true">
-      <span class="miHint defaultBadge">Default</span>
-      <span class="material-icons miCheck">done</span>
-    </span>
-  </button>
-</div>
-
+              <button class="menuItem" id="runCellBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">view_agenda</span>
+                <span class="miLabel">Run Cell</span>
+                <span class="miRight" aria-hidden="true">
+                  <span class="miHint defaultBadge">Default</span>
+                  <span class="material-icons miCheck">done</span>
+                </span>
+              </button>
+            </div>
           </div>
 
           <button class="toolBtn collapse" id="openBtn" type="button" title="Open (Cmd/Ctrl + O)" aria-label="Open file">
@@ -1111,7 +1099,7 @@
     const runAllBtn = document.getElementById("runAllBtn");
     const runSelBtn = document.getElementById("runSelBtn");
     const runCellBtn = document.getElementById("runCellBtn");
-    const runModePill = document.getElementById("runModePill");
+    const runLabel = document.getElementById("runLabel");
 
     const openBtn = document.getElementById("openBtn");
     const saveBtn = document.getElementById("saveBtn");
@@ -1271,7 +1259,7 @@
 
     function updateRunModeUI(){
       const label = getRunModeLabel(state.runMode);
-      runModePill.textContent = label;
+      runLabel.textContent = `Run ${label}`;
 
       [runAllBtn, runSelBtn, runCellBtn].forEach(b => b.classList.remove("activeMode"));
       const map = { all: runAllBtn, selection: runSelBtn, cell: runCellBtn };
