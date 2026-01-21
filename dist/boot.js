@@ -1000,7 +1000,7 @@ builtins.input = custom_input
         const headerLines = [];
         if (opts.includeBranding) {
             headerLines.push("Inscribe Editor");
-            headerLines.push("");
+            headerLines.push("py.mkyu.one");
         }
         if (opts.includeTimestamp) {
             headerLines.push(`Printed / Exported: ${getTimestamp()}`);
