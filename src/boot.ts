@@ -533,15 +533,16 @@ builtins.input = custom_input
   function setHints() {
     const mac = isMac();
     const mod = mac ? "⌘" : "Ctrl";
+    const enterKey = mac ? "Return" : "Enter";
 
-    hintRun.textContent = `${mod} Enter`;
+    hintRun.textContent = `${mod} ${enterKey}`;
     hintOpen.textContent = `${mod} O`;
     hintSave.textContent = `${mod} S`;
     hintSettings.textContent = `${mod} ,`;
 
     const shortcuts = [
-      { keys: [mod, "Enter"], desc: "Run (uses Run Mode config)" },
-      { keys: [mod, "Shift", "Enter"], desc: "Run current cell (# %%)" },
+      { keys: [mod, enterKey], desc: "Run (uses Run Mode config)" },
+      { keys: [mod, "Shift", enterKey], desc: "Run current cell (# %%)" },
       { keys: [mod, "S"], desc: "Save file" },
       { keys: [mod, "O"], desc: "Open file" },
       { keys: [mod, ","], desc: "Open Settings" },
