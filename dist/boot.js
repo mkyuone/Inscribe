@@ -814,7 +814,7 @@ builtins.input = custom_input
         }
         try {
             const { url, usedCompression } = await buildShareUrl(code);
-            const warnThreshold = 1200;
+            const warnThreshold = 1600;
             if (url.length > warnThreshold) {
                 const proceed = await confirmLongUrl(url.length);
                 if (!proceed) {
