@@ -214,7 +214,10 @@ export async function boot() {
     state.runMode = allowed.includes(mode) ? mode : "all";
     safeLS.set(LS_KEYS.RUNMODE, state.runMode);
     updateRunModeUI();
-    addConsoleLine(`Run mode set to: ${getRunModeLabel(state.runMode)}`, { dim: true });
+    addConsoleLine(`Run mode set to: ${getRunModeLabel(state.runMode)}`, {
+      dim: true,
+      system: true
+    });
   }
 
   function getCurrentCellCode() {
@@ -278,7 +281,7 @@ export async function boot() {
     editor.setValue(draft);
     lastSavedContent = editor.getValue();
     setDirty(false);
-    addConsoleLine("Restored previous draft.", { dim: true });
+    addConsoleLine("Restored previous draft.", { dim: true, system: true });
   }
 
   editor.on("change", () => {
@@ -298,12 +301,17 @@ export async function boot() {
   let consoleBackup: string | null = null;
   let undoTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function addConsoleLine(text: string, opts: { error?: boolean; dim?: boolean } = {}) {
+  function addConsoleLine(
+    text: string,
+    opts: { error?: boolean; dim?: boolean; system?: boolean } = {}
+  ) {
     const line = document.createElement("div");
     line.className = "consoleLine";
     if (opts.error) line.classList.add("err");
     if (opts.dim) line.classList.add("dim");
-    line.innerHTML = `<span class="prefix">&gt;</span>${escapeHtml(text)}`;
+    if (opts.system) line.classList.add("system");
+    const prefix = opts.system ? "*" : ">";
+    line.innerHTML = `<span class="prefix">${prefix}</span>${escapeHtml(text)}`;
     consoleEl.appendChild(line);
     consoleEl.scrollTop = consoleEl.scrollHeight;
   }
@@ -526,7 +534,7 @@ export async function boot() {
 
   function clearConsole(keepBanner = true) {
     consoleEl.innerHTML = "";
-    if (keepBanner) addConsoleLine("Ready. Run to load Pyodide.", { dim: true });
+    if (keepBanner) addConsoleLine("Ready. Run to load Pyodide.", { dim: true, system: true });
   }
 
   function clearConsoleWithUndo() {
@@ -534,7 +542,7 @@ export async function boot() {
     consoleBackup = consoleEl.innerHTML;
 
     consoleEl.innerHTML = "";
-    addConsoleLine("Console cleared. Undo available for 3 seconds.", { dim: true });
+    addConsoleLine("Console cleared. Undo available for 3 seconds.", { dim: true, system: true });
 
     undoClearBtn.style.display = "inline-flex";
     undoTimer = setTimeout(() => {
@@ -555,7 +563,10 @@ export async function boot() {
   async function initializePyodide() {
     if (state.pyodideInstance) return;
 
-    addConsoleLine("Loading Pyodide… This may take a moment on first run.", { dim: true });
+    addConsoleLine("Loading Pyodide… This may take a moment on first run.", {
+      dim: true,
+      system: true
+    });
     state.pyodideReady = false;
     updateStatusBar();
 
@@ -578,15 +589,18 @@ builtins.input = custom_input
     state.pyodideReady = true;
     updateStatusBar();
 
-    addConsoleLine("Inscribe Editor & Execution with Pyodide", { dim: true });
-    addConsoleLine("Inscribe v2.1 / (c) Mark Yu, py.mkyu.one", { dim: true });
-    addConsoleLine("------------------------------------------", { dim: true });
+    addConsoleLine("Inscribe Editor & Execution with Pyodide", { dim: true, system: true });
+    addConsoleLine("Inscribe v2.1 / (c) Mark Yu, py.mkyu.one", { dim: true, system: true });
+    addConsoleLine("------------------------------------------", { dim: true, system: true });
   }
 
   function resetEnvironment() {
     state.pyodideInstance = null;
     state.pyodideReady = false;
-    addConsoleLine("Environment reset. Next run will reload Pyodide.", { dim: true });
+    addConsoleLine("Environment reset. Next run will reload Pyodide.", {
+      dim: true,
+      system: true
+    });
     updateStatusBar();
     refocusEditor();
   }
@@ -605,12 +619,13 @@ builtins.input = custom_input
       const code = getCodeForMode(mode);
       if (!code || !code.trim()) {
         addConsoleLine(mode === "selection" ? "No selection to run." : "Nothing to run.", {
-          dim: true
+          dim: true,
+          system: true
         });
         return;
       }
 
-      addConsoleLine(`Executing (${getRunModeLabel(mode)})…`, { dim: true });
+      addConsoleLine(`Executing (${getRunModeLabel(mode)})…`, { dim: true, system: true });
 
       const t0 = performance.now();
       const rewritten = rewriteInputCalls(code);
@@ -628,14 +643,14 @@ builtins.input = custom_input
 
       const dt = performance.now() - t0;
       if (prefs.showExecTime) {
-        addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true });
+        addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true, system: true });
       }
     } catch (err) {
       const msg = err?.toString?.() ?? String(err);
       msg.split("\n").forEach((l: string) => {
         if (l.trim()) addConsoleLine(l, { error: true });
       });
-      addConsoleLine("Finished with errors.", { dim: true });
+      addConsoleLine("Finished with errors.", { dim: true, system: true });
     } finally {
       state.isRunning = false;
       updateStatusBar();
@@ -658,7 +673,7 @@ builtins.input = custom_input
   fileInput.addEventListener("change", (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) {
-      addConsoleLine("Open cancelled.", { dim: true });
+      addConsoleLine("Open cancelled.", { dim: true, system: true });
       refocusEditor();
       return;
     }
@@ -668,7 +683,7 @@ builtins.input = custom_input
       setFilename(file.name);
       lastSavedContent = editor.getValue();
       setDirty(false);
-      addConsoleLine(`Loaded: ${file.name}`, { dim: true });
+      addConsoleLine(`Loaded: ${file.name}`, { dim: true, system: true });
       refocusEditor();
     };
     reader.readAsText(file);
@@ -691,7 +706,7 @@ builtins.input = custom_input
 
     lastSavedContent = code;
     setDirty(false);
-    addConsoleLine(`Saved: ${a.download}`, { dim: true });
+    addConsoleLine(`Saved: ${a.download}`, { dim: true, system: true });
 
     refocusEditor();
   }
@@ -700,7 +715,10 @@ builtins.input = custom_input
     prefs.lineWrap = !prefs.lineWrap;
     savePrefs(prefs);
     applyPrefs();
-    addConsoleLine(`Line wrap: ${prefs.lineWrap ? "on" : "off"}`, { dim: true });
+    addConsoleLine(`Line wrap: ${prefs.lineWrap ? "on" : "off"}`, {
+      dim: true,
+      system: true
+    });
     refocusEditor();
   }
 

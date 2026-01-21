@@ -581,9 +581,15 @@
     padding:2px 0;
   }
   .prefix{
-    color:rgba(15,23,42,0.42);
+    color:rgba(15,23,42,0.62);
     user-select:none;
     margin-right:6px;
+  }
+  .consoleLine.system .prefix{
+    color:rgba(15,23,42,0.62);
+  }
+  .consoleLine.input .prefix{
+    color:rgba(37,99,235,0.65);
   }
   .err{ color:var(--danger); }
   .dim{ color:rgba(15,23,42,0.62); }
