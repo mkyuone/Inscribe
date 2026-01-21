@@ -25,8 +25,11 @@ export async function boot() {
     booted = true;
     const consoleFallback = document.getElementById("console");
     const runBtnFallback = document.getElementById("runBtn");
+    const loadingOverlay = document.getElementById("loadingOverlay");
     function showFatal(msg) {
         console.error(msg);
+        if (loadingOverlay)
+            loadingOverlay.classList.add("hidden");
         if (runBtnFallback)
             runBtnFallback.disabled = true;
         if (consoleFallback) {
@@ -670,4 +673,9 @@ builtins.input = custom_input
     updateClock();
     updateRunModeUI();
     refocusEditor();
+    if (loadingOverlay) {
+        requestAnimationFrame(() => {
+            loadingOverlay.classList.add("hidden");
+        });
+    }
 }
