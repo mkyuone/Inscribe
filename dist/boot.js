@@ -621,7 +621,7 @@ builtins.input = custom_input
         state.pyodideReady = true;
         updateStatusBar();
         addConsoleLine("Inscribe Editor & Execution with Pyodide", { dim: true, system: true });
-        addConsoleLine("Inscribe v2.1 / (c) Mark Yu, py.mkyu.one", { dim: true, system: true });
+        addConsoleLine("Inscribe v3.1 / (c) Mark Yu, py.mkyu.one", { dim: true, system: true });
         addConsoleLine("------------------------------------------", { dim: true, system: true });
     }
     function resetEnvironment() {
