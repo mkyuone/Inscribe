@@ -114,8 +114,6 @@ export async function boot() {
   const printWrapLines = byId<HTMLInputElement>("printWrapLines");
   const printBranding = byId<HTMLInputElement>("printBranding");
   const printTimestamp = byId<HTMLInputElement>("printTimestamp");
-  const printFormatPrint = byId<HTMLInputElement>("printFormatPrint");
-  const printFormatPdf = byId<HTMLInputElement>("printFormatPdf");
   const printContentNote = byId<HTMLDivElement>("printContentNote");
   const exportRoot = byId<HTMLDivElement>("exportRoot");
   const shareToast = byId<HTMLDivElement>("shareToast");
@@ -1118,42 +1116,6 @@ builtins.input = custom_input
 
   }
 
-  function setExportMetadata(isPdf: boolean) {
-    const originalTitle = document.title;
-    const originalAuthor = document.querySelector('meta[name="author"]')?.getAttribute("content");
-    const originalSubject = document.querySelector('meta[name="subject"]')?.getAttribute("content");
-
-    const setMeta = (name: string, value: string) => {
-      let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.setAttribute("name", name);
-        document.head.appendChild(meta);
-      }
-      meta.setAttribute("content", value);
-    };
-
-    if (isPdf) {
-      document.title = "Inscribe Editor - PDF Export";
-      setMeta("author", "Inscribe Editor");
-      setMeta("subject", "Python code and output");
-    }
-
-    return () => {
-      document.title = originalTitle;
-      const authorMeta = document.querySelector('meta[name="author"]') as HTMLMetaElement | null;
-      const subjectMeta = document.querySelector('meta[name="subject"]') as HTMLMetaElement | null;
-      if (authorMeta) {
-        if (!originalAuthor) authorMeta.remove();
-        else authorMeta.setAttribute("content", originalAuthor);
-      }
-      if (subjectMeta) {
-        if (!originalSubject) subjectMeta.remove();
-        else subjectMeta.setAttribute("content", originalSubject);
-      }
-    };
-  }
-
   function updatePrintConfirmState() {
     const codeSelected = printIncludeCode.checked;
     const outputSelected = printIncludeOutput.checked;
@@ -1178,8 +1140,7 @@ builtins.input = custom_input
     printWrapLines.checked = true;
     printBranding.checked = true;
     printTimestamp.checked = true;
-    printFormatPrint.checked = true;
-    printConfirmBtn.textContent = "Print";
+    printConfirmBtn.textContent = "Print / Export";
     updatePrintConfirmState();
     openPrint();
   }
@@ -1191,7 +1152,6 @@ builtins.input = custom_input
     const wrap = printWrapLines.checked;
     const includeBranding = printBranding.checked;
     const includeTimestamp = printTimestamp.checked;
-    const isPdf = printFormatPdf.checked;
 
     buildExportLayout({
       includeCode,
@@ -1202,13 +1162,11 @@ builtins.input = custom_input
       includeTimestamp
     });
 
-    const restoreMeta = setExportMetadata(isPdf);
     document.body.classList.add("exporting");
     closePrint();
 
     const cleanup = () => {
       document.body.classList.remove("exporting");
-      restoreMeta();
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
@@ -1217,6 +1175,7 @@ builtins.input = custom_input
       window.print();
     }, 0);
   }
+
 
   function openMenu() {
     closeRunMenu();
@@ -1427,12 +1386,9 @@ builtins.input = custom_input
     printLineNumbers,
     printWrapLines,
     printBranding,
-    printTimestamp,
-    printFormatPrint,
-    printFormatPdf
+    printTimestamp
   ].forEach((input) => {
     input.addEventListener("change", () => {
-      printConfirmBtn.textContent = printFormatPdf.checked ? "Export PDF" : "Print";
       updatePrintConfirmState();
     });
   });

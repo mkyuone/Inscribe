@@ -92,8 +92,6 @@ export async function boot() {
     const printWrapLines = byId("printWrapLines");
     const printBranding = byId("printBranding");
     const printTimestamp = byId("printTimestamp");
-    const printFormatPrint = byId("printFormatPrint");
-    const printFormatPdf = byId("printFormatPdf");
     const printContentNote = byId("printContentNote");
     const exportRoot = byId("exportRoot");
     const shareToast = byId("shareToast");
@@ -997,43 +995,6 @@ builtins.input = custom_input
             exportRoot.appendChild(section);
         }
     }
-    function setExportMetadata(isPdf) {
-        var _a, _b;
-        const originalTitle = document.title;
-        const originalAuthor = (_a = document.querySelector('meta[name="author"]')) === null || _a === void 0 ? void 0 : _a.getAttribute("content");
-        const originalSubject = (_b = document.querySelector('meta[name="subject"]')) === null || _b === void 0 ? void 0 : _b.getAttribute("content");
-        const setMeta = (name, value) => {
-            let meta = document.querySelector(`meta[name="${name}"]`);
-            if (!meta) {
-                meta = document.createElement("meta");
-                meta.setAttribute("name", name);
-                document.head.appendChild(meta);
-            }
-            meta.setAttribute("content", value);
-        };
-        if (isPdf) {
-            document.title = "Inscribe Editor - PDF Export";
-            setMeta("author", "Inscribe Editor");
-            setMeta("subject", "Python code and output");
-        }
-        return () => {
-            document.title = originalTitle;
-            const authorMeta = document.querySelector('meta[name="author"]');
-            const subjectMeta = document.querySelector('meta[name="subject"]');
-            if (authorMeta) {
-                if (!originalAuthor)
-                    authorMeta.remove();
-                else
-                    authorMeta.setAttribute("content", originalAuthor);
-            }
-            if (subjectMeta) {
-                if (!originalSubject)
-                    subjectMeta.remove();
-                else
-                    subjectMeta.setAttribute("content", originalSubject);
-            }
-        };
-    }
     function updatePrintConfirmState() {
         const codeSelected = printIncludeCode.checked;
         const outputSelected = printIncludeOutput.checked;
@@ -1059,8 +1020,7 @@ builtins.input = custom_input
         printWrapLines.checked = true;
         printBranding.checked = true;
         printTimestamp.checked = true;
-        printFormatPrint.checked = true;
-        printConfirmBtn.textContent = "Print";
+        printConfirmBtn.textContent = "Print / Export";
         updatePrintConfirmState();
         openPrint();
     }
@@ -1071,7 +1031,6 @@ builtins.input = custom_input
         const wrap = printWrapLines.checked;
         const includeBranding = printBranding.checked;
         const includeTimestamp = printTimestamp.checked;
-        const isPdf = printFormatPdf.checked;
         buildExportLayout({
             includeCode,
             includeOutput,
@@ -1080,12 +1039,10 @@ builtins.input = custom_input
             includeBranding,
             includeTimestamp
         });
-        const restoreMeta = setExportMetadata(isPdf);
         document.body.classList.add("exporting");
         closePrint();
         const cleanup = () => {
             document.body.classList.remove("exporting");
-            restoreMeta();
             window.removeEventListener("afterprint", cleanup);
         };
         window.addEventListener("afterprint", cleanup);
@@ -1284,12 +1241,9 @@ builtins.input = custom_input
         printLineNumbers,
         printWrapLines,
         printBranding,
-        printTimestamp,
-        printFormatPrint,
-        printFormatPdf
+        printTimestamp
     ].forEach((input) => {
         input.addEventListener("change", () => {
-            printConfirmBtn.textContent = printFormatPdf.checked ? "Export PDF" : "Print";
             updatePrintConfirmState();
         });
     });
