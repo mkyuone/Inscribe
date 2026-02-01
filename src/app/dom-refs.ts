@@ -84,6 +84,10 @@ export type DomRefs = {
   wrapToggle: HTMLInputElement;
   splitToggle: HTMLInputElement;
   execTimeToggle: HTMLInputElement;
+  themeAuto: HTMLInputElement;
+  themeLight: HTMLInputElement;
+  themeDark: HTMLInputElement;
+  themeGroup: HTMLDivElement;
   resetPrefsBtn: HTMLButtonElement;
   shortcutBody: HTMLTableSectionElement;
   dynamicStyles: HTMLStyleElement;
@@ -174,6 +178,10 @@ export function getDomRefs(): DomRefs {
     wrapToggle: byId<HTMLInputElement>("wrapToggle"),
     splitToggle: byId<HTMLInputElement>("splitToggle"),
     execTimeToggle: byId<HTMLInputElement>("execTimeToggle"),
+    themeAuto: byId<HTMLInputElement>("themeAuto"),
+    themeLight: byId<HTMLInputElement>("themeLight"),
+    themeDark: byId<HTMLInputElement>("themeDark"),
+    themeGroup: byId<HTMLDivElement>("themeGroup"),
     resetPrefsBtn: byId<HTMLButtonElement>("resetPrefsBtn"),
     shortcutBody: byId<HTMLTableSectionElement>("shortcutBody"),
     dynamicStyles: byId<HTMLStyleElement>("dynamicStyles")

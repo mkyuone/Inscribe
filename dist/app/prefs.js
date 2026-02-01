@@ -20,6 +20,10 @@ export function savePrefs(prefs) {
     }
 }
 export function applyPrefs(prefs, editor, dom) {
+    const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const resolvedTheme = prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+    document.documentElement.dataset.theme = resolvedTheme;
+    editor.setOption("theme", resolvedTheme === "dark" ? "inscribe-dark" : "eclipse");
     dom.dynamicStyles.textContent = `
     .CodeMirror{ font-size:${prefs.editorFontSize}px; }
     #console{ font-size:${prefs.consoleFontSize}px; }
@@ -40,8 +44,17 @@ export function applyPrefs(prefs, editor, dom) {
     dom.wrapToggle.checked = !!prefs.lineWrap;
     dom.splitToggle.checked = !!prefs.splitHorizontal;
     dom.execTimeToggle.checked = !!prefs.showExecTime;
+    dom.themeAuto.checked = prefs.theme === "system";
+    dom.themeLight.checked = prefs.theme === "light";
+    dom.themeDark.checked = prefs.theme === "dark";
+    dom.themeGroup.dataset.choice = prefs.theme;
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) {
+        themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
+    }
 }
 export function bindPrefsUI(prefs, editor, dom, onChange) {
+    var _a, _b;
     dom.editorSizeRange.addEventListener("input", () => {
         prefs.editorFontSize = parseFloat(dom.editorSizeRange.value);
         savePrefs(prefs);
@@ -72,6 +85,31 @@ export function bindPrefsUI(prefs, editor, dom, onChange) {
         applyPrefs(prefs, editor, dom);
         onChange === null || onChange === void 0 ? void 0 : onChange();
     });
+    const applyThemeChoice = (next) => {
+        prefs.theme = next;
+        savePrefs(prefs);
+        applyPrefs(prefs, editor, dom);
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    };
+    const handleThemeToggle = (next) => {
+        applyThemeChoice(next);
+    };
+    dom.themeAuto.addEventListener("change", () => handleThemeToggle("system"));
+    dom.themeLight.addEventListener("change", () => handleThemeToggle("light"));
+    dom.themeDark.addEventListener("change", () => handleThemeToggle("dark"));
+    const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const onThemeMedia = () => {
+        if (prefs.theme !== "system")
+            return;
+        applyPrefs(prefs, editor, dom);
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    };
+    if (typeof themeMedia.addEventListener === "function") {
+        themeMedia.addEventListener("change", onThemeMedia);
+    }
+    else {
+        (_b = (_a = themeMedia).addListener) === null || _b === void 0 ? void 0 : _b.call(_a, onThemeMedia);
+    }
 }
 export function resetPrefs(prefs, editor, dom) {
     Object.assign(prefs, DEFAULT_PREFS);

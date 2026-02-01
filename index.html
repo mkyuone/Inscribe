@@ -310,6 +310,37 @@
           </div>
 
           <div class="settingsSection">
+            <div class="settingsSectionTitle">Appearance</div>
+            <div class="settingsRow">
+              <label class="settingsLabel">Theme</label>
+              <div class="settingsControl">
+                <div class="checkGroup segmented" id="themeGroup" role="radiogroup" aria-label="Theme">
+                  <span class="segmentedSlider" aria-hidden="true"></span>
+                  <label class="checkPill" for="themeAuto">
+                    <input id="themeAuto" type="checkbox" />
+                    <span>Automatic</span>
+                  </label>
+                  <label class="checkPill" for="themeLight">
+                    <input id="themeLight" type="checkbox" />
+                    <span>Light</span>
+                  </label>
+                  <label class="checkPill" for="themeDark">
+                    <input id="themeDark" type="checkbox" />
+                    <span>Dark</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="settingsRow">
+              <label class="settingsLabel toggle" for="splitToggle">
+                <input id="splitToggle" type="checkbox" />
+                <span>Horizontal split</span>
+              </label>
+            </div>
+            <div class="settingsNote">Place editor and console side-by-side.</div>
+          </div>
+
+          <div class="settingsSection">
             <div class="settingsSectionTitle">Editor behavior</div>
             <div class="settingsRow">
               <label class="settingsLabel toggle" for="wrapToggle">
@@ -318,17 +349,6 @@
               </label>
             </div>
             <div class="settingsNote">Wrap long lines to stay within the editor width.</div>
-          </div>
-
-          <div class="settingsSection">
-            <div class="settingsSectionTitle">Layout</div>
-            <div class="settingsRow">
-              <label class="settingsLabel toggle" for="splitToggle">
-                <input id="splitToggle" type="checkbox" />
-                <span>Horizontal split</span>
-              </label>
-            </div>
-            <div class="settingsNote">Place editor and console side-by-side.</div>
           </div>
 
           <div class="settingsSection">

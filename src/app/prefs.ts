@@ -22,6 +22,12 @@ export function savePrefs(prefs: Prefs) {
 }
 
 export function applyPrefs(prefs: Prefs, editor: CodeMirrorEditor, dom: DomRefs) {
+  const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+  const resolvedTheme =
+    prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+  document.documentElement.dataset.theme = resolvedTheme;
+  editor.setOption("theme", resolvedTheme === "dark" ? "inscribe-dark" : "eclipse");
+
   dom.dynamicStyles.textContent = `
     .CodeMirror{ font-size:${prefs.editorFontSize}px; }
     #console{ font-size:${prefs.consoleFontSize}px; }
@@ -44,6 +50,15 @@ export function applyPrefs(prefs: Prefs, editor: CodeMirrorEditor, dom: DomRefs)
   dom.wrapToggle.checked = !!prefs.lineWrap;
   dom.splitToggle.checked = !!prefs.splitHorizontal;
   dom.execTimeToggle.checked = !!prefs.showExecTime;
+  dom.themeAuto.checked = prefs.theme === "system";
+  dom.themeLight.checked = prefs.theme === "light";
+  dom.themeDark.checked = prefs.theme === "dark";
+  dom.themeGroup.dataset.choice = prefs.theme;
+
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) {
+    themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
+  }
 }
 
 export function bindPrefsUI(
@@ -82,6 +97,34 @@ export function bindPrefsUI(
     applyPrefs(prefs, editor, dom);
     onChange?.();
   });
+  const applyThemeChoice = (next: Prefs["theme"]) => {
+    prefs.theme = next;
+    savePrefs(prefs);
+    applyPrefs(prefs, editor, dom);
+    onChange?.();
+  };
+  const handleThemeToggle = (next: Prefs["theme"]) => {
+    applyThemeChoice(next);
+  };
+  dom.themeAuto.addEventListener("change", () => handleThemeToggle("system"));
+  dom.themeLight.addEventListener("change", () => handleThemeToggle("light"));
+  dom.themeDark.addEventListener("change", () => handleThemeToggle("dark"));
+
+  const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+  const onThemeMedia = () => {
+    if (prefs.theme !== "system") return;
+    applyPrefs(prefs, editor, dom);
+    onChange?.();
+  };
+  if (typeof themeMedia.addEventListener === "function") {
+    themeMedia.addEventListener("change", onThemeMedia);
+  } else {
+    (
+      themeMedia as MediaQueryList & {
+        addListener?: (listener: (e: MediaQueryListEvent) => void) => void;
+      }
+    ).addListener?.(onThemeMedia);
+  }
 }
 
 export function resetPrefs(prefs: Prefs, editor: CodeMirrorEditor, dom: DomRefs) {

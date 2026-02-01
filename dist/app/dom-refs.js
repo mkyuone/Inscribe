@@ -84,6 +84,10 @@ export function getDomRefs() {
         wrapToggle: byId("wrapToggle"),
         splitToggle: byId("splitToggle"),
         execTimeToggle: byId("execTimeToggle"),
+        themeAuto: byId("themeAuto"),
+        themeLight: byId("themeLight"),
+        themeDark: byId("themeDark"),
+        themeGroup: byId("themeGroup"),
         resetPrefsBtn: byId("resetPrefsBtn"),
         shortcutBody: byId("shortcutBody"),
         dynamicStyles: byId("dynamicStyles")

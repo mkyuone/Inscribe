@@ -10,5 +10,6 @@ export const DEFAULT_PREFS = {
   consoleFontSize: 13.5,
   lineWrap: false,
   showExecTime: true,
-  splitHorizontal: false
+  splitHorizontal: false,
+  theme: "light"
 };
