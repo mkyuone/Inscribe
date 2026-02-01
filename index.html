@@ -24,6 +24,15 @@
 <!-- App styles -->
 <link rel="stylesheet" href="assets/css/app.css"/>
 
+<!-- Microsoft Clarity (masked content via data-clarity-mask) -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "vaiyuj6ku8");
+</script>
+
 <!-- Pyodide + CodeMirror scripts -->
 <script defer data-cfasync="false" src="assets/vendor/pyodide/pyodide.js"></script>
 <script defer data-cfasync="false" src="assets/vendor/codemirror/codemirror.min.js"></script>
@@ -173,7 +182,7 @@
 
     <main>
       <div class="split">
-        <section class="pane editorPane" id="editorPane">
+        <section class="pane editorPane" id="editorPane" data-clarity-mask="true">
           <div class="paneHeader">
             <div class="paneLeft">
               <div class="paneTitle"><span class="dot"></span>Editor</div>
@@ -190,7 +199,7 @@
 
         <div class="resizer" id="dragbar" aria-label="Resize panels"></div>
 
-        <section class="pane consolePane" id="consolePane">
+        <section class="pane consolePane" id="consolePane" data-clarity-mask="true">
           <div class="paneHeader">
             <div class="paneLeft">
               <div class="paneTitle"><span class="dot"></span>Console</div>
@@ -425,7 +434,7 @@
     </div>
   </div>
 
-  <div class="exportRoot" id="exportRoot" aria-hidden="true"></div>
+  <div class="exportRoot" id="exportRoot" aria-hidden="true" data-clarity-mask="true"></div>
 
   <!-- Long URL warning modal -->
   <div class="overlay" id="shareWarnOverlay" role="dialog" aria-modal="true" aria-labelledby="shareWarnTitle">
