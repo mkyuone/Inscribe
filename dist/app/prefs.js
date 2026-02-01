@@ -26,11 +26,19 @@ export function applyPrefs(prefs, editor, dom) {
   `;
     editor.setOption("lineWrapping", !!prefs.lineWrap);
     editor.refresh();
+    dom.splitPane.classList.toggle("horizontal", !!prefs.splitHorizontal);
+    if (prefs.splitHorizontal) {
+        dom.editorPane.style.height = "";
+    }
+    else {
+        dom.editorPane.style.width = "";
+    }
     dom.editorSizeRange.value = String(prefs.editorFontSize);
     dom.consoleSizeRange.value = String(prefs.consoleFontSize);
     dom.editorSizeLabel.textContent = `${prefs.editorFontSize.toFixed(2)}px`;
     dom.consoleSizeLabel.textContent = `${prefs.consoleFontSize.toFixed(2)}px`;
     dom.wrapToggle.checked = !!prefs.lineWrap;
+    dom.splitToggle.checked = !!prefs.splitHorizontal;
     dom.execTimeToggle.checked = !!prefs.showExecTime;
 }
 export function bindPrefsUI(prefs, editor, dom, onChange) {
@@ -48,6 +56,12 @@ export function bindPrefsUI(prefs, editor, dom, onChange) {
     });
     dom.wrapToggle.addEventListener("change", () => {
         prefs.lineWrap = !!dom.wrapToggle.checked;
+        savePrefs(prefs);
+        applyPrefs(prefs, editor, dom);
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    });
+    dom.splitToggle.addEventListener("change", () => {
+        prefs.splitHorizontal = !!dom.splitToggle.checked;
         savePrefs(prefs);
         applyPrefs(prefs, editor, dom);
         onChange === null || onChange === void 0 ? void 0 : onChange();

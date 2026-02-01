@@ -172,29 +172,36 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     function bindResizer() {
         let dragging = false;
         let startY = 0;
-        let startHeight = 0;
+        let startX = 0;
+        let startSize = 0;
         dom.resizer.addEventListener("mousedown", (e) => {
             dragging = true;
             startY = e.clientY;
-            startHeight = dom.editorPane.offsetHeight;
+            startX = e.clientX;
+            startSize = dom.splitPane.classList.contains("horizontal")
+                ? dom.editorPane.offsetWidth
+                : dom.editorPane.offsetHeight;
             e.preventDefault();
         });
         document.addEventListener("mousemove", (e) => {
             if (!dragging)
                 return;
-            const dy = e.clientY - startY;
-            const split = document.querySelector(".split");
-            if (!split)
-                return;
-            const total = split.clientHeight;
-            const min = 150;
-            const max = total - 150;
-            let next = startHeight + dy;
+            const horizontal = dom.splitPane.classList.contains("horizontal");
+            const delta = horizontal ? e.clientX - startX : e.clientY - startY;
+            const total = horizontal ? dom.splitPane.clientWidth : dom.splitPane.clientHeight;
+            const min = horizontal ? 220 : 150;
+            const max = total - min;
+            let next = startSize + delta;
             if (next < min)
                 next = min;
             if (next > max)
                 next = max;
-            dom.editorPane.style.height = `${next}px`;
+            if (horizontal) {
+                dom.editorPane.style.width = `${next}px`;
+            }
+            else {
+                dom.editorPane.style.height = `${next}px`;
+            }
             editor.refresh();
         });
         document.addEventListener("mouseup", () => {

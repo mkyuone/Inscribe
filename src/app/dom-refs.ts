@@ -21,6 +21,7 @@ export type DomRefs = {
   aboutBtn: HTMLButtonElement;
   wrapBtn: HTMLButtonElement;
   editorPane: HTMLDivElement;
+  splitPane: HTMLDivElement;
   resizer: HTMLDivElement;
   consoleEl: HTMLDivElement;
   clearConsoleBtn: HTMLButtonElement;
@@ -81,6 +82,7 @@ export type DomRefs = {
   editorSizeLabel: HTMLSpanElement;
   consoleSizeLabel: HTMLSpanElement;
   wrapToggle: HTMLInputElement;
+  splitToggle: HTMLInputElement;
   execTimeToggle: HTMLInputElement;
   resetPrefsBtn: HTMLButtonElement;
   shortcutBody: HTMLTableSectionElement;
@@ -109,6 +111,7 @@ export function getDomRefs(): DomRefs {
     aboutBtn: byId<HTMLButtonElement>("aboutBtn"),
     wrapBtn: byId<HTMLButtonElement>("wrapBtn"),
     editorPane: byId<HTMLDivElement>("editorPane"),
+    splitPane: byId<HTMLDivElement>("splitPane"),
     resizer: byId<HTMLDivElement>("dragbar"),
     consoleEl: byId<HTMLDivElement>("console"),
     clearConsoleBtn: byId<HTMLButtonElement>("clearConsoleBtn"),
@@ -169,6 +172,7 @@ export function getDomRefs(): DomRefs {
     editorSizeLabel: byId<HTMLSpanElement>("editorSizeLabel"),
     consoleSizeLabel: byId<HTMLSpanElement>("consoleSizeLabel"),
     wrapToggle: byId<HTMLInputElement>("wrapToggle"),
+    splitToggle: byId<HTMLInputElement>("splitToggle"),
     execTimeToggle: byId<HTMLInputElement>("execTimeToggle"),
     resetPrefsBtn: byId<HTMLButtonElement>("resetPrefsBtn"),
     shortcutBody: byId<HTMLTableSectionElement>("shortcutBody"),

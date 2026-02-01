@@ -446,6 +446,13 @@
     gap:8px;
   }
 
+  .split.horizontal{
+    flex-direction:row;
+  }
+  .split.horizontal .pane{
+    min-width:0;
+  }
+
   .pane{
     background:var(--panel);
     border:1px solid var(--border);
@@ -458,7 +465,7 @@
   }
 
   .paneHeader{
-    padding:8px 10px;
+    padding:6px 10px;
     background:linear-gradient(to bottom, var(--panel2), rgba(255,255,255,0.80));
     border-bottom:1px solid var(--border);
     display:flex;
@@ -506,6 +513,14 @@
     gap:6px;
     flex:none;
   }
+  .paneActions .iconBtn{
+    width:30px;
+    height:30px;
+    border-radius:9px;
+  }
+  .paneActions .iconBtn .material-icons{
+    font-size:17px;
+  }
 
   .iconBtn{
     width:var(--iconBtn);
@@ -538,11 +553,20 @@
   }
   .iconBtn.undo:hover{ background:rgba(37,99,235,0.14); }
 
-  .editorPane{ height:58%; }
+  .split:not(.horizontal) .editorPane{ height:58%; }
+  .split.horizontal .editorPane{
+    width:58%;
+    height:auto;
+    flex:0 0 auto;
+  }
+  .split.horizontal .consolePane{
+    flex:1 1 0;
+    min-width:0;
+  }
   .consolePane{ flex:1; }
 
   .resizer{
-    height:10px;
+    height:6px;
     border-radius:999px;
     cursor:row-resize;
     background:transparent;
@@ -553,13 +577,22 @@
   }
   .resizer::before{
     content:"";
-    width:76px;
-    height:4px;
+    width:68px;
+    height:3px;
     border-radius:999px;
     background:rgba(15,23,42,0.16);
     transition:background var(--tFast) var(--ease);
   }
   .resizer:hover::before{ background:rgba(15,23,42,0.26); }
+  .split.horizontal .resizer{
+    width:6px;
+    height:auto;
+    cursor:col-resize;
+  }
+  .split.horizontal .resizer::before{
+    width:3px;
+    height:68px;
+  }
 
   .CodeMirror,
   .CodeMirror pre,

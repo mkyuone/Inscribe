@@ -172,7 +172,7 @@
     </div>
 
     <main>
-      <div class="split">
+      <div class="split" id="splitPane">
         <section class="pane editorPane" id="editorPane">
           <div class="paneHeader">
             <div class="paneLeft">
@@ -318,6 +318,17 @@
               </label>
             </div>
             <div class="settingsNote">Wrap long lines to stay within the editor width.</div>
+          </div>
+
+          <div class="settingsSection">
+            <div class="settingsSectionTitle">Layout</div>
+            <div class="settingsRow">
+              <label class="settingsLabel toggle" for="splitToggle">
+                <input id="splitToggle" type="checkbox" />
+                <span>Horizontal split</span>
+              </label>
+            </div>
+            <div class="settingsNote">Place editor and console side-by-side.</div>
           </div>
 
           <div class="settingsSection">
