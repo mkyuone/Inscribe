@@ -236,18 +236,11 @@ export async function boot() {
         ui.closeMenu();
         ui.openAbout();
     });
-    dom.privacyBtn.addEventListener("click", () => {
-        ui.openPrivacy();
-    });
     dom.wrapBtn.addEventListener("click", toggleWrap);
     dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
     dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);
     dom.closeAboutBtn.addEventListener("click", () => {
         ui.closeAbout();
-        refocusEditor();
-    });
-    dom.closePrivacyBtn.addEventListener("click", () => {
-        ui.closePrivacy();
         refocusEditor();
     });
     dom.closeSettingsBtn.addEventListener("click", () => {

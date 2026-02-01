@@ -921,19 +921,6 @@
     color:rgba(15,23,42,0.62);
     margin-top:6px;
   }
-  .aboutPrivacy{
-    font-size:13px;
-    color:rgba(15,23,42,0.72);
-  }
-  .linkBtn{
-    padding:0;
-    border:none;
-    background:none;
-    color:var(--accent);
-    cursor:pointer;
-    font:inherit;
-    text-decoration:underline;
-  }
   .settingsHeader{
     display:flex;
     align-items:flex-start;

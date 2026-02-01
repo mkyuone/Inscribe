@@ -27,9 +27,6 @@ export type DomRefs = {
   undoClearBtn: HTMLButtonElement;
   aboutOverlay: HTMLDivElement;
   closeAboutBtn: HTMLButtonElement;
-  privacyBtn: HTMLButtonElement;
-  privacyOverlay: HTMLDivElement;
-  closePrivacyBtn: HTMLButtonElement;
   aboutVersion: HTMLSpanElement;
   aboutBuildTime: HTMLSpanElement;
   aboutCommitHash: HTMLSpanElement;
@@ -118,9 +115,6 @@ export function getDomRefs(): DomRefs {
     undoClearBtn: byId<HTMLButtonElement>("undoClearBtn"),
     aboutOverlay: byId<HTMLDivElement>("aboutOverlay"),
     closeAboutBtn: byId<HTMLButtonElement>("closeAboutBtn"),
-    privacyBtn: byId<HTMLButtonElement>("privacyBtn"),
-    privacyOverlay: byId<HTMLDivElement>("privacyOverlay"),
-    closePrivacyBtn: byId<HTMLButtonElement>("closePrivacyBtn"),
     aboutVersion: byId<HTMLSpanElement>("aboutVersion"),
     aboutBuildTime: byId<HTMLSpanElement>("aboutBuildTime"),
     aboutCommitHash: byId<HTMLSpanElement>("aboutCommitHash"),

@@ -5,8 +5,6 @@ import { DomRefs } from "./dom-refs.js";
 export type UiController = {
   openAbout: () => void;
   closeAbout: () => void;
-  openPrivacy: () => void;
-  closePrivacy: () => void;
   openSettings: () => void;
   closeSettings: () => void;
   openPrint: () => void;
@@ -53,12 +51,6 @@ export function createUiController(
   function closeAbout() {
     dom.aboutOverlay.classList.remove("active");
   }
-  function openPrivacy() {
-    dom.privacyOverlay.classList.add("active");
-  }
-  function closePrivacy() {
-    dom.privacyOverlay.classList.remove("active");
-  }
   function openSettings() {
     dom.settingsOverlay.classList.add("active");
   }
@@ -80,7 +72,6 @@ export function createUiController(
 
   function closeAnyModal() {
     closeAbout();
-    closePrivacy();
     closeSettings();
     closePrint();
     closeShareWarn();
@@ -215,9 +206,6 @@ export function createUiController(
     dom.aboutOverlay.addEventListener("click", (e) => {
       if (e.target === dom.aboutOverlay) closeAbout();
     });
-    dom.privacyOverlay.addEventListener("click", (e) => {
-      if (e.target === dom.privacyOverlay) closePrivacy();
-    });
     dom.settingsOverlay.addEventListener("click", (e) => {
       if (e.target === dom.settingsOverlay) closeSettings();
     });
@@ -267,8 +255,6 @@ export function createUiController(
   return {
     openAbout,
     closeAbout,
-    openPrivacy,
-    closePrivacy,
     openSettings,
     closeSettings,
     openPrint,
