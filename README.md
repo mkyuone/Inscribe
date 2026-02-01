@@ -1,8 +1,9 @@
 # Inscribe Editor
 
-[![Version](https://img.shields.io/badge/version-3.3-blue)](VERSION)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Website](https://img.shields.io/badge/website-py.mkyu.one-2ea44f)](https://py.mkyu.one)
+[![Version](https://img.shields.io/github/v/tag/mkyuone/Inscribe?style=for-the-badge)](VERSION)
+[![License](https://img.shields.io/github/license/mkyuone/Inscribe?style=for-the-badge)](LICENSE)
+[![Website](https://img.shields.io/website?style=for-the-badge&url=https%3A%2F%2Fpy.mkyu.one)](https://py.mkyu.one)
+[![TypeScript](https://img.shields.io/github/languages/top/mkyuone/Inscribe?style=for-the-badge)](https://www.typescriptlang.org/)
 
 Inscribe Editor is a lightweight, in‑browser Python editor and runner powered by Pyodide (WebAssembly).
 It’s designed to be minimal, fast, and distraction‑free—ideal for learning, experimenting, or running quick Python snippets directly in your browser.
