@@ -18,6 +18,7 @@ It’s designed to be minimal, fast, and distraction-free — ideal for learning
 - Clear output console with basic error highlighting
 - Open and save files using browser File APIs
 - Persistent settings and draft recovery via `localStorage`
+- Usage analytics via Microsoft Clarity with editor/console content masked (no code/output captured)
 
 
 ## Changelog

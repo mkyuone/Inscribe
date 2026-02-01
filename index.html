@@ -269,6 +269,11 @@
         This software is provided “as is”, without warranty of any kind.<br/>
         Licensed under the MIT License.
       </p>
+      <p class="aboutPrivacy">
+        We improve this app by using Microsoft Clarity to understand usage patterns.
+        By using this app, you agree that we and Microsoft can collect and use this data.
+        <button class="linkBtn" id="privacyBtn" type="button">Our privacy statement</button> has more details.
+      </p>
       <p style="color: rgba(15,23,42,0.70);">
         Copyright © 2023–2026 Mark Yu.
       </p>
@@ -279,6 +284,24 @@
           <span class="material-icons" aria-hidden="true">open_in_new</span>
           <span style="opacity:1;transform:none;">View source</span>
         </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy modal -->
+  <div class="overlay" id="privacyOverlay" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+    <div class="modal modalAbout">
+      <h2 id="privacyTitle">Privacy Statement</h2>
+      <p>
+        Inscribe uses Microsoft Clarity to understand how the app is used and to improve usability.
+        We do not send your editor or console content to Clarity — those areas are explicitly masked.
+      </p>
+      <p>
+        Clarity may collect standard usage data (pages visited, clicks, device/browser info).
+        If you are in a region that requires consent, Clarity will not record without it.
+      </p>
+      <div class="modalRow">
+        <button class="toolBtn" id="closePrivacyBtn" type="button">Close</button>
       </div>
     </div>
   </div>

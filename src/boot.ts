@@ -319,6 +319,9 @@ export async function boot() {
     ui.closeMenu();
     ui.openAbout();
   });
+  dom.privacyBtn.addEventListener("click", () => {
+    ui.openPrivacy();
+  });
 
   dom.wrapBtn.addEventListener("click", toggleWrap);
 
@@ -327,6 +330,10 @@ export async function boot() {
 
   dom.closeAboutBtn.addEventListener("click", () => {
     ui.closeAbout();
+    refocusEditor();
+  });
+  dom.closePrivacyBtn.addEventListener("click", () => {
+    ui.closePrivacy();
     refocusEditor();
   });
   dom.closeSettingsBtn.addEventListener("click", () => {
