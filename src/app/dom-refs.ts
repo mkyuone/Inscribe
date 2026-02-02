@@ -84,7 +84,6 @@ export type DomRefs = {
   sbFile: HTMLSpanElement;
   sbPos: HTMLSpanElement;
   sbSel: HTMLSpanElement;
-  sbClock: HTMLSpanElement;
   hintRun: HTMLSpanElement;
   hintOpen: HTMLSpanElement;
   hintSave: HTMLSpanElement;
@@ -193,7 +192,6 @@ export function getDomRefs(): DomRefs {
     sbFile: byId<HTMLSpanElement>("sbFile"),
     sbPos: byId<HTMLSpanElement>("sbPos"),
     sbSel: byId<HTMLSpanElement>("sbSel"),
-    sbClock: byId<HTMLSpanElement>("sbClock"),
     hintRun: byId<HTMLSpanElement>("hintRun"),
     hintOpen: byId<HTMLSpanElement>("hintOpen"),
     hintSave: byId<HTMLSpanElement>("hintSave"),

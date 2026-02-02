@@ -14,7 +14,7 @@ import { registerServiceWorker } from "./app/pwa.js";
 import { loadPrefs, applyPrefs, savePrefs, bindPrefsUI, resetPrefs } from "./app/prefs.js";
 import { createShareController } from "./app/share.js";
 import { createInitialState } from "./app/state.js";
-import { setFilenameStatus, updateClock, updateCursorStatus, updateStatusBar } from "./app/status.js";
+import { setFilenameStatus, updateCursorStatus, updateStatusBar } from "./app/status.js";
 import { getRunModeLabel, setRunMode, updateRunModeUI } from "./app/run-mode.js";
 import { createRefocusEditor, createUiController, UiController } from "./app/ui.js";
 import { APP_VERSION, BUILD_TIME, COMMIT_HASH } from "./version.js";
@@ -466,7 +466,6 @@ export async function boot() {
   consoleApi.clear(true);
   updateStatusBar(state, dom);
   updateCursorStatus(editorCtrl.editor, dom);
-  updateClock(dom);
   updateRunModeUI(state.runMode, dom);
   registerServiceWorker();
   refocusEditor();
@@ -475,7 +474,6 @@ export async function boot() {
     pyodideCtrl.warmStart();
   }, 250);
 
-  setInterval(() => updateClock(dom), 1000);
 
   if (loadingOverlay) {
     requestAnimationFrame(() => {

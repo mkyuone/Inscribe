@@ -84,7 +84,6 @@ export function getDomRefs() {
         sbFile: byId("sbFile"),
         sbPos: byId("sbPos"),
         sbSel: byId("sbSel"),
-        sbClock: byId("sbClock"),
         hintRun: byId("hintRun"),
         hintOpen: byId("hintOpen"),
         hintSave: byId("hintSave"),

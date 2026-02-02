@@ -17,10 +17,3 @@ export function updateCursorStatus(editor, dom) {
     const selLen = editor.somethingSelected() ? editor.getSelection().length : 0;
     dom.sbSel.textContent = `Sel ${selLen}`;
 }
-export function updateClock(dom) {
-    const d = new Date();
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    dom.sbClock.textContent = `${hh}:${mm}:${ss}`;
-}
