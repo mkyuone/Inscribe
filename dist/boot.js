@@ -35,7 +35,6 @@ function waitForGlobals(timeoutMs = 9000) {
 }
 let booted = false;
 export async function boot() {
-    var _a, _b;
     if (booted)
         return;
     booted = true;
@@ -215,7 +214,7 @@ export async function boot() {
             stdout
         });
     });
-    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor, historyCtrl);
+    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor);
     fileCtrl.setFilename(safeLS.get(LS_KEYS.FILENAME) || "untitled.py");
     dom.aboutVersion.textContent = `v${APP_VERSION}`;
     dom.aboutBuildTime.textContent = BUILD_TIME;
@@ -230,19 +229,8 @@ export async function boot() {
         lastHistoryCode = shared.code;
         lastHistoryTs = Date.now();
         void historyCtrl.addEdit({ ts: lastHistoryTs, kind: "shared", code: shared.code });
-        if (shared.history) {
-            void historyCtrl.importShared(shared.history);
-        }
         consoleApi.addLine("Loaded shared code from link.", { dim: true, system: true });
         shareCtrl.showToast("Shared code loaded", "This editor opened code from a share link.");
-        if ((_b = (_a = shared.history) === null || _a === void 0 ? void 0 : _a.outputs) === null || _b === void 0 ? void 0 : _b.length) {
-            consoleApi.addLine("Shared output:", { dim: true, system: true });
-            shared.history.outputs.forEach((entry) => {
-                entry.stdout.split("\n").forEach((line) => {
-                    consoleApi.addLine(line);
-                });
-            });
-        }
     }
     else if (draft && draft.trim().length) {
         editorCtrl.setValue(draft);

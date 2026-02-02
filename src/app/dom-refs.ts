@@ -49,12 +49,6 @@ export type DomRefs = {
   printTimestamp: HTMLInputElement;
   printContentNote: HTMLDivElement;
   exportRoot: HTMLDivElement;
-  shareOverlay: HTMLDivElement;
-  shareCancelBtn: HTMLButtonElement;
-  shareConfirmBtn: HTMLButtonElement;
-  shareIncludeEdits: HTMLInputElement;
-  shareIncludeOutput: HTMLInputElement;
-  shareSizeNote: HTMLDivElement;
   historyOverlay: HTMLDivElement;
   historyList: HTMLDivElement;
   historyDiff: HTMLDivElement;
@@ -157,12 +151,6 @@ export function getDomRefs(): DomRefs {
     printTimestamp: byId<HTMLInputElement>("printTimestamp"),
     printContentNote: byId<HTMLDivElement>("printContentNote"),
     exportRoot: byId<HTMLDivElement>("exportRoot"),
-    shareOverlay: byId<HTMLDivElement>("shareOverlay"),
-    shareCancelBtn: byId<HTMLButtonElement>("shareCancelBtn"),
-    shareConfirmBtn: byId<HTMLButtonElement>("shareConfirmBtn"),
-    shareIncludeEdits: byId<HTMLInputElement>("shareIncludeEdits"),
-    shareIncludeOutput: byId<HTMLInputElement>("shareIncludeOutput"),
-    shareSizeNote: byId<HTMLDivElement>("shareSizeNote"),
     historyOverlay: byId<HTMLDivElement>("historyOverlay"),
     historyList: byId<HTMLDivElement>("historyList"),
     historyDiff: byId<HTMLDivElement>("historyDiff"),

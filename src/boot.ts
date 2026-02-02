@@ -291,8 +291,7 @@ export async function boot() {
     () => editorCtrl.getValue(),
     consoleApi.addLine,
     () => fileCtrl.saveFile(),
-    refocusEditor,
-    historyCtrl
+    refocusEditor
   );
 
   fileCtrl.setFilename(safeLS.get(LS_KEYS.FILENAME) || "untitled.py");
@@ -310,19 +309,8 @@ export async function boot() {
     lastHistoryCode = shared.code;
     lastHistoryTs = Date.now();
     void historyCtrl.addEdit({ ts: lastHistoryTs, kind: "shared", code: shared.code });
-    if (shared.history) {
-      void historyCtrl.importShared(shared.history);
-    }
     consoleApi.addLine("Loaded shared code from link.", { dim: true, system: true });
     shareCtrl.showToast("Shared code loaded", "This editor opened code from a share link.");
-    if (shared.history?.outputs?.length) {
-      consoleApi.addLine("Shared output:", { dim: true, system: true });
-      shared.history.outputs.forEach((entry) => {
-        entry.stdout.split("\n").forEach((line) => {
-          consoleApi.addLine(line);
-        });
-      });
-    }
   } else if (draft && draft.trim().length) {
     editorCtrl.setValue(draft);
     editorCtrl.markSaved();

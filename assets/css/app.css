@@ -954,31 +954,6 @@
   .modalSettings .settingsCardTitle{
     letter-spacing:0.08em;
   }
-  .modalShare{
-    width:min(440px, 94vw);
-  }
-  .shareOptions{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    border:1px solid rgba(15,23,42,0.10);
-    border-radius:12px;
-    padding:12px;
-    background:rgba(15,23,42,0.03);
-    margin-bottom:12px;
-  }
-  .shareOptions .settingsLabel{
-    flex:0 0 auto;
-    width:100%;
-    justify-content:flex-start;
-  }
-  .shareOptions .settingsLabel span{
-    flex:1;
-  }
-  .shareNote{
-    font-size:12.5px;
-    color:rgba(15,23,42,0.64);
-  }
   .modalHistory{
     width:min(920px, 96vw);
     max-height:calc(100vh - 120px);
@@ -1798,13 +1773,6 @@
   }
   html[data-theme="dark"] .settingsCardTitle .material-icons{
     color:rgba(226,232,240,0.6);
-  }
-  html[data-theme="dark"] .shareOptions{
-    border-color:rgba(148,163,184,0.2);
-    background:rgba(148,163,184,0.08);
-  }
-  html[data-theme="dark"] .shareNote{
-    color:rgba(226,232,240,0.65);
   }
   html[data-theme="dark"] .historyList,
   html[data-theme="dark"] .historyPreview{
