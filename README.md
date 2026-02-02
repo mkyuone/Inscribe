@@ -33,6 +33,7 @@ It’s designed to be minimal, fast, and distraction‑free—ideal for learning
 <summary><strong>Recent changes</strong></summary>
 
 - v3.3: Runtime UX and settings polish.
+- v3.4: Local version history (diff preview/restore), share link enhancements, and UI polish.
 - v3.2: Worker-based runtime for blocking `input()` and `time.sleep()`. COOP/COEP headers and local dev server.
 - v3.1: Shareable URLs with compressed code payloads.
 - v3.0: Modular TypeScript source under `src/`, compiled output to `dist/`, and fully vendored assets.
