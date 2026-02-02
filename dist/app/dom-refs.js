@@ -20,6 +20,8 @@ export function getDomRefs() {
         resetBtn: byId("resetBtn"),
         settingsBtn: byId("settingsBtn"),
         aboutBtn: byId("aboutBtn"),
+        undoBtn: byId("undoBtn"),
+        redoBtn: byId("redoBtn"),
         wrapBtn: byId("wrapBtn"),
         editorPane: byId("editorPane"),
         splitPane: byId("splitPane"),

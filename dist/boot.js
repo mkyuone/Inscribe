@@ -309,6 +309,14 @@ export async function boot() {
         ui.closeLicense();
         refocusEditor();
     });
+    dom.undoBtn.addEventListener("click", () => {
+        editorCtrl.editor.undo();
+        refocusEditor();
+    });
+    dom.redoBtn.addEventListener("click", () => {
+        editorCtrl.editor.redo();
+        refocusEditor();
+    });
     dom.wrapBtn.addEventListener("click", toggleWrap);
     dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
     dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);

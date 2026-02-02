@@ -9,6 +9,8 @@ type CodeMirrorEditor = {
   getRange(from: CodeMirrorCursor, to: CodeMirrorCursor): string;
   somethingSelected(): boolean;
   getSelection(): string;
+  undo(): void;
+  redo(): void;
   on(event: string, handler: (...args: any[]) => void): void;
   setOption(option: string, value: unknown): void;
   refresh(): void;

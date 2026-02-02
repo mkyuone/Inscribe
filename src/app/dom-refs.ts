@@ -20,6 +20,8 @@ export type DomRefs = {
   resetBtn: HTMLButtonElement;
   settingsBtn: HTMLButtonElement;
   aboutBtn: HTMLButtonElement;
+  undoBtn: HTMLButtonElement;
+  redoBtn: HTMLButtonElement;
   wrapBtn: HTMLButtonElement;
   editorPane: HTMLDivElement;
   splitPane: HTMLDivElement;
@@ -122,6 +124,8 @@ export function getDomRefs(): DomRefs {
     resetBtn: byId<HTMLButtonElement>("resetBtn"),
     settingsBtn: byId<HTMLButtonElement>("settingsBtn"),
     aboutBtn: byId<HTMLButtonElement>("aboutBtn"),
+    undoBtn: byId<HTMLButtonElement>("undoBtn"),
+    redoBtn: byId<HTMLButtonElement>("redoBtn"),
     wrapBtn: byId<HTMLButtonElement>("wrapBtn"),
     editorPane: byId<HTMLDivElement>("editorPane"),
     splitPane: byId<HTMLDivElement>("splitPane"),
