@@ -263,7 +263,7 @@
       </div>
       <p>
         This software is provided “as is”, without warranty of any kind.<br/>
-        Licensed under the MIT License.
+        Licensed under the <button class="linkBtn" id="licenseLink" type="button">MIT License</button>.
       </p>
       <p style="color: rgba(15,23,42,0.70);">
         Copyright © 2023–2026 Mark Yu.
@@ -275,6 +275,44 @@
           <span class="material-icons" aria-hidden="true">open_in_new</span>
           <span style="opacity:1;transform:none;">View source</span>
         </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- License modal -->
+  <div class="overlay" id="licenseOverlay" role="dialog" aria-modal="true" aria-labelledby="licenseTitle">
+    <div class="modal modalLicense">
+      <div class="settingsHeader">
+        <div>
+          <h2 id="licenseTitle">MIT License</h2>
+          <p class="settingsIntro">Stored locally with the app for quick reference.</p>
+        </div>
+      </div>
+
+      <pre class="licenseText">MIT License
+
+Copyright (c) 2025, 2026 Mark Yu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="closeLicenseBtn" type="button">Close</button>
       </div>
     </div>
   </div>

@@ -13,6 +13,12 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     function closeAbout() {
         dom.aboutOverlay.classList.remove("active");
     }
+    function openLicense() {
+        dom.licenseOverlay.classList.add("active");
+    }
+    function closeLicense() {
+        dom.licenseOverlay.classList.remove("active");
+    }
     function openSettings() {
         dom.settingsOverlay.classList.add("active");
     }
@@ -33,6 +39,7 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     }
     function closeAnyModal() {
         closeAbout();
+        closeLicense();
         closeSettings();
         closePrint();
         closeShareWarn();
@@ -156,6 +163,10 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             if (e.target === dom.aboutOverlay)
                 closeAbout();
         });
+        dom.licenseOverlay.addEventListener("click", (e) => {
+            if (e.target === dom.licenseOverlay)
+                closeLicense();
+        });
         dom.settingsOverlay.addEventListener("click", (e) => {
             if (e.target === dom.settingsOverlay)
                 closeSettings();
@@ -211,6 +222,8 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     return {
         openAbout,
         closeAbout,
+        openLicense,
+        closeLicense,
         openSettings,
         closeSettings,
         openPrint,

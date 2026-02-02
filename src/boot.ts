@@ -399,6 +399,13 @@ export async function boot() {
     ui.closeMenu();
     ui.openAbout();
   });
+  dom.licenseLink.addEventListener("click", () => {
+    ui.openLicense();
+  });
+  dom.closeLicenseBtn.addEventListener("click", () => {
+    ui.closeLicense();
+    refocusEditor();
+  });
 
   dom.wrapBtn.addEventListener("click", toggleWrap);
 

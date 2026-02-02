@@ -849,6 +849,37 @@
     backdrop-filter: blur(10px) saturate(1.2);
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
   }
+  .modalLicense{
+    width:min(760px, 96vw);
+    max-height:calc(100vh - 120px);
+    display:flex;
+    flex-direction:column;
+  }
+  .licenseText{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12.5px;
+    line-height:1.55;
+    color:rgba(15,23,42,0.78);
+    white-space:pre-wrap;
+    background:rgba(15,23,42,0.03);
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:12px;
+    padding:12px;
+    max-height:420px;
+    overflow:auto;
+  }
+  .linkBtn{
+    appearance:none;
+    border:none;
+    background:none;
+    padding:0;
+    color:var(--accent);
+    font-weight:600;
+    cursor:pointer;
+  }
+  .linkBtn:hover{
+    text-decoration:underline;
+  }
   .modalAbout{
     width:min(640px, 92vw);
   }
@@ -1724,6 +1755,14 @@
     background:rgba(15,23,42,0.92);
     border:1px solid rgba(148,163,184,0.2);
     box-shadow:0 30px 80px rgba(2,6,23,0.6);
+  }
+  html[data-theme="dark"] .licenseText{
+    color:rgba(226,232,240,0.78);
+    background:rgba(148,163,184,0.08);
+    border-color:rgba(148,163,184,0.2);
+  }
+  html[data-theme="dark"] .linkBtn{
+    color:rgba(96,165,250,0.95);
   }
   html[data-theme="dark"] .versionTag,
   html[data-theme="dark"] .aboutMeta,
