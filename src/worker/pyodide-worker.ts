@@ -5,6 +5,8 @@ type WorkerGlobal = DedicatedWorkerGlobalScope & {
   inscribeStdout?: (text?: string) => void;
   inscribeStdoutFlush?: () => void;
   __inscribeReadline?: (prompt?: string) => string | null;
+  __inscribePauseTimer?: () => void;
+  __inscribeResumeTimer?: () => void;
 };
 
 const ctx = self as WorkerGlobal;
@@ -30,6 +32,10 @@ let stdinI32: Int32Array | null = null;
 let stdinU8: Uint8Array | null = null;
 let interruptI32: Int32Array | null = null;
 let mainGlobals: any = null;
+let runStartMs = 0;
+let pausedMs = 0;
+let pauseStartMs = 0;
+let pauseDepth = 0;
 
 const textDecoder = new TextDecoder();
 
@@ -46,6 +52,27 @@ function setupInterrupt(sab: SharedArrayBuffer) {
   interruptI32 = new Int32Array(sab);
 }
 
+function beginPause() {
+  if (pauseDepth === 0) pauseStartMs = performance.now();
+  pauseDepth += 1;
+}
+
+function endPause() {
+  if (pauseDepth === 0) return;
+  pauseDepth -= 1;
+  if (pauseDepth === 0) {
+    pausedMs += performance.now() - pauseStartMs;
+    pauseStartMs = 0;
+  }
+}
+
+function resetRunTiming() {
+  runStartMs = performance.now();
+  pausedMs = 0;
+  pauseStartMs = 0;
+  pauseDepth = 0;
+}
+
 function readLine(prompt?: string) {
   if (!stdinI32 || !stdinU8) {
     post("error-line", { text: "Input bridge unavailable (no SharedArrayBuffer)." });
@@ -55,7 +82,9 @@ function readLine(prompt?: string) {
   Atomics.store(stdinI32, 0, 1);
   Atomics.store(stdinI32, 1, 0);
   post("input", { prompt: prompt ? String(prompt) : "" });
+  beginPause();
   Atomics.wait(stdinI32, 0, 1);
+  endPause();
 
   const rawLength = stdinI32[1];
   if (rawLength < 0) {
@@ -98,11 +127,14 @@ async function ensurePyodide() {
     post("stdout-flush");
   };
   ctx.__inscribeReadline = readLine;
+  ctx.__inscribePauseTimer = beginPause;
+  ctx.__inscribeResumeTimer = endPause;
 
   pyodide.runPython(`
 import sys
 import js
 import builtins
+import time as _time
 
 class JSConsole:
     def write(self, s):
@@ -119,6 +151,15 @@ def custom_input(prompt=""):
         raise KeyboardInterrupt("Execution interrupted")
     return val
 builtins.input = custom_input
+
+_orig_sleep = _time.sleep
+def _inscribe_sleep(secs=0):
+    js.__inscribePauseTimer()
+    try:
+        return _orig_sleep(secs)
+    finally:
+        js.__inscribeResumeTimer()
+_time.sleep = _inscribe_sleep
   `);
 }
 
@@ -160,6 +201,7 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
 
     if (message.type === "run") {
       await ensurePyodide();
+      resetRunTiming();
       try {
         if (mainGlobals) {
           pyodide.runPython(BUILTIN_GUARD_CODE, { globals: mainGlobals });
@@ -168,7 +210,9 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
           pyodide.runPython(BUILTIN_GUARD_CODE);
           await pyodide.runPythonAsync(message.code);
         }
-        post("run-complete", { ok: true });
+        if (pauseDepth > 0) endPause();
+        const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
+        post("run-complete", { ok: true, durationMs });
       } catch (err) {
         const msg = err?.toString?.() ?? String(err);
         if (msg.includes("KeyboardInterrupt")) {
@@ -178,7 +222,9 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
             if (line.trim()) post("error-line", { text: line });
           });
         }
-        post("run-complete", { ok: false });
+        if (pauseDepth > 0) endPause();
+        const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
+        post("run-complete", { ok: false, durationMs });
       }
       return;
     }

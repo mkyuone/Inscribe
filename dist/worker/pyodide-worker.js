@@ -6,6 +6,10 @@ let stdinI32 = null;
 let stdinU8 = null;
 let interruptI32 = null;
 let mainGlobals = null;
+let runStartMs = 0;
+let pausedMs = 0;
+let pauseStartMs = 0;
+let pauseDepth = 0;
 const textDecoder = new TextDecoder();
 function post(type, payload = {}) {
     ctx.postMessage({ type, ...payload });
@@ -17,6 +21,26 @@ function setupStdin(sab, maxBytes) {
 function setupInterrupt(sab) {
     interruptI32 = new Int32Array(sab);
 }
+function beginPause() {
+    if (pauseDepth === 0)
+        pauseStartMs = performance.now();
+    pauseDepth += 1;
+}
+function endPause() {
+    if (pauseDepth === 0)
+        return;
+    pauseDepth -= 1;
+    if (pauseDepth === 0) {
+        pausedMs += performance.now() - pauseStartMs;
+        pauseStartMs = 0;
+    }
+}
+function resetRunTiming() {
+    runStartMs = performance.now();
+    pausedMs = 0;
+    pauseStartMs = 0;
+    pauseDepth = 0;
+}
 function readLine(prompt) {
     if (!stdinI32 || !stdinU8) {
         post("error-line", { text: "Input bridge unavailable (no SharedArrayBuffer)." });
@@ -25,7 +49,9 @@ function readLine(prompt) {
     Atomics.store(stdinI32, 0, 1);
     Atomics.store(stdinI32, 1, 0);
     post("input", { prompt: prompt ? String(prompt) : "" });
+    beginPause();
     Atomics.wait(stdinI32, 0, 1);
+    endPause();
     const rawLength = stdinI32[1];
     if (rawLength < 0) {
         stdinI32[1] = 0;
@@ -63,10 +89,13 @@ async function ensurePyodide() {
         post("stdout-flush");
     };
     ctx.__inscribeReadline = readLine;
+    ctx.__inscribePauseTimer = beginPause;
+    ctx.__inscribeResumeTimer = endPause;
     pyodide.runPython(`
 import sys
 import js
 import builtins
+import time as _time
 
 class JSConsole:
     def write(self, s):
@@ -83,6 +112,15 @@ def custom_input(prompt=""):
         raise KeyboardInterrupt("Execution interrupted")
     return val
 builtins.input = custom_input
+
+_orig_sleep = _time.sleep
+def _inscribe_sleep(secs=0):
+    js.__inscribePauseTimer()
+    try:
+        return _orig_sleep(secs)
+    finally:
+        js.__inscribeResumeTimer()
+_time.sleep = _inscribe_sleep
   `);
 }
 const BUILTIN_GUARD_CODE = `
@@ -121,6 +159,7 @@ ctx.onmessage = async (event) => {
         }
         if (message.type === "run") {
             await ensurePyodide();
+            resetRunTiming();
             try {
                 if (mainGlobals) {
                     pyodide.runPython(BUILTIN_GUARD_CODE, { globals: mainGlobals });
@@ -130,7 +169,10 @@ ctx.onmessage = async (event) => {
                     pyodide.runPython(BUILTIN_GUARD_CODE);
                     await pyodide.runPythonAsync(message.code);
                 }
-                post("run-complete", { ok: true });
+                if (pauseDepth > 0)
+                    endPause();
+                const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
+                post("run-complete", { ok: true, durationMs });
             }
             catch (err) {
                 const msg = (_b = (_a = err === null || err === void 0 ? void 0 : err.toString) === null || _a === void 0 ? void 0 : _a.call(err)) !== null && _b !== void 0 ? _b : String(err);
@@ -143,7 +185,10 @@ ctx.onmessage = async (event) => {
                             post("error-line", { text: line });
                     });
                 }
-                post("run-complete", { ok: false });
+                if (pauseDepth > 0)
+                    endPause();
+                const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
+                post("run-complete", { ok: false, durationMs });
             }
             return;
         }

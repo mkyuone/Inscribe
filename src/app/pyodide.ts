@@ -33,7 +33,7 @@ type WorkerStdoutMessage = { type: "stdout"; text: string };
 type WorkerStdoutFlushMessage = { type: "stdout-flush" };
 type WorkerInputRequestMessage = { type: "input"; prompt: string };
 type WorkerErrorLineMessage = { type: "error-line"; text: string };
-type WorkerRunCompleteMessage = { type: "run-complete"; ok: boolean };
+type WorkerRunCompleteMessage = { type: "run-complete"; ok: boolean; durationMs?: number };
 type WorkerInterruptedMessage = { type: "interrupted" };
 
 type WorkerInboundMessage =
@@ -87,6 +87,7 @@ export function createPyodideController(
   let runResolve: ((ok: boolean) => void) | null = null;
   let runCompletionPromise: Promise<boolean> | null = null;
   let runStart = 0;
+  let lastRunDurationMs: number | null = null;
   let warnedIsolation = false;
   let warnedAsyncioRun = false;
   let readyNotified = false;
@@ -240,6 +241,8 @@ export function createPyodideController(
         void handleInputRequest(message.prompt);
         break;
       case "run-complete":
+        lastRunDurationMs =
+          typeof message.durationMs === "number" ? message.durationMs : null;
         if (runResolve) {
           runResolve(message.ok);
           runResolve = null;
@@ -282,6 +285,7 @@ export function createPyodideController(
     setRunButtonState(true);
     resetStdoutBuffer();
     beginRunCapture();
+    lastRunDurationMs = null;
 
     let didRun = false;
     let runOk = false;
@@ -328,7 +332,10 @@ export function createPyodideController(
       runOk = ok;
       flushStdoutBuffer();
 
-      const dt = performance.now() - runStart;
+      const dt =
+        typeof lastRunDurationMs === "number"
+          ? lastRunDurationMs
+          : performance.now() - runStart;
       durationMs = dt;
       if (prefs.showExecTime) {
         addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true, system: true });

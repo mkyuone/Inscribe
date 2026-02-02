@@ -12,6 +12,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
     let runResolve = null;
     let runCompletionPromise = null;
     let runStart = 0;
+    let lastRunDurationMs = null;
     let warnedIsolation = false;
     let warnedAsyncioRun = false;
     let readyNotified = false;
@@ -157,6 +158,8 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
                 void handleInputRequest(message.prompt);
                 break;
             case "run-complete":
+                lastRunDurationMs =
+                    typeof message.durationMs === "number" ? message.durationMs : null;
                 if (runResolve) {
                     runResolve(message.ok);
                     runResolve = null;
@@ -198,6 +201,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         setRunButtonState(true);
         resetStdoutBuffer();
         beginRunCapture();
+        lastRunDurationMs = null;
         let didRun = false;
         let runOk = false;
         let durationMs = 0;
@@ -237,7 +241,9 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             const ok = await runCompletionPromise;
             runOk = ok;
             flushStdoutBuffer();
-            const dt = performance.now() - runStart;
+            const dt = typeof lastRunDurationMs === "number"
+                ? lastRunDurationMs
+                : performance.now() - runStart;
             durationMs = dt;
             if (prefs.showExecTime) {
                 addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true, system: true });
