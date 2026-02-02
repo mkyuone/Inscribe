@@ -874,8 +874,9 @@
     background:none;
     padding:0;
     color:var(--accent);
-    font-weight:600;
+    font-weight:inherit;
     cursor:pointer;
+    text-decoration:underline;
   }
   .linkBtn:hover{
     text-decoration:underline;
