@@ -41,7 +41,7 @@ It’s designed to be minimal, fast, and distraction‑free—ideal for learning
 </details>
 
 <details>
-<summary><strong>Version history (local)</strong></summary>
+<summary><strong>Version history (local) implementation details</strong></summary>
 
 - Stored locally in your browser via IndexedDB (no server sync).
 - Autosaves roughly every 15 seconds while you edit (only if content changed).
