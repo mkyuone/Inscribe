@@ -19,9 +19,7 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
         const curr = editor.getValue();
         onDirtyChange(curr !== lastSavedContent);
         saveDraftDebounced();
-        if (dom.printOverlay.classList.contains("active")) {
-            onChange === null || onChange === void 0 ? void 0 : onChange();
-        }
+        onChange === null || onChange === void 0 ? void 0 : onChange();
     });
     function getCurrentCellCode() {
         const cursor = editor.getCursor();

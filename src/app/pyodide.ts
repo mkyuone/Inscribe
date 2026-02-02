@@ -58,13 +58,21 @@ export function createPyodideController(
   runGroup: HTMLDivElement,
   prefs: { showExecTime: boolean },
   resetStdoutBuffer: () => void,
+  beginRunCapture: () => void,
   flushStdoutBuffer: () => void,
+  getRunStdout: () => string,
   handleStdout: (text: string) => void,
   requestInput: (prompt?: string) => Promise<string>,
   cancelActiveInput: () => void,
   showIsolationWarning: () => void,
   confirmAsyncioRun: () => Promise<boolean>,
-  onReadyToast: () => void
+  onReadyToast: () => void,
+  onRunFinished: (result: {
+    ok: boolean;
+    durationMs: number;
+    stdout: string;
+    interrupted: boolean;
+  }) => void
 ): PyodideController {
   const inputMaxBytes = 64 * 1024;
   const supportsBlockingInput =
@@ -273,6 +281,11 @@ export function createPyodideController(
     runModeBtn.disabled = true;
     setRunButtonState(true);
     resetStdoutBuffer();
+    beginRunCapture();
+
+    let didRun = false;
+    let runOk = false;
+    let durationMs = 0;
 
     try {
       const code = getCodeForMode(mode);
@@ -309,11 +322,14 @@ export function createPyodideController(
 
       const runMessage: WorkerRunMessage = { type: "run", code };
       postToWorker(runMessage);
+      didRun = true;
 
       const ok = await runCompletionPromise;
+      runOk = ok;
       flushStdoutBuffer();
 
       const dt = performance.now() - runStart;
+      durationMs = dt;
       if (prefs.showExecTime) {
         addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true, system: true });
       }
@@ -321,12 +337,21 @@ export function createPyodideController(
         addConsoleLine("Finished with errors.", { dim: true, system: true });
       }
     } catch (err) {
+      runOk = false;
       const msg = err?.toString?.() ?? String(err);
       msg.split("\n").forEach((l: string) => {
         if (l.trim()) addConsoleLine(l, { error: true });
       });
       addConsoleLine("Finished with errors.", { dim: true, system: true });
     } finally {
+      if (didRun) {
+        onRunFinished({
+          ok: runOk,
+          durationMs,
+          stdout: getRunStdout(),
+          interrupted: interruptedRun
+        });
+      }
       interruptedRun = false;
       state.isRunning = false;
       updateStatusBar();

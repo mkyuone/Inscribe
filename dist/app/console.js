@@ -3,6 +3,7 @@ export function createConsoleController(dom) {
     let consoleBackup = null;
     let undoTimer = null;
     let stdoutBuffer = "";
+    let runStdout = "";
     function addLine(text, opts = {}) {
         const line = document.createElement("div");
         line.className = "consoleLine";
@@ -23,9 +24,16 @@ export function createConsoleController(dom) {
         addLine(stdoutBuffer);
         stdoutBuffer = "";
     }
+    function beginRunCapture() {
+        runStdout = "";
+    }
+    function getRunStdout() {
+        return runStdout.replace(/\s+$/g, "");
+    }
     function handleStdout(text) {
         var _a;
         const normalized = String(text !== null && text !== void 0 ? text : "").replace(/\r/g, "");
+        runStdout += normalized;
         stdoutBuffer += normalized;
         const lines = stdoutBuffer.split("\n");
         stdoutBuffer = (_a = lines.pop()) !== null && _a !== void 0 ? _a : "";
@@ -91,6 +99,8 @@ export function createConsoleController(dom) {
         clearWithUndo,
         undoClear,
         collectOutput,
+        beginRunCapture,
+        getRunStdout,
         handleStdout,
         flushStdoutBuffer,
         resetStdoutBuffer,

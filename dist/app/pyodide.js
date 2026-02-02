@@ -1,6 +1,6 @@
 import { formatDuration } from "../utils/time.js";
 import { BUILD_TIME } from "../version.js";
-export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, flushStdoutBuffer, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast) {
+export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onRunFinished) {
     const inputMaxBytes = 64 * 1024;
     const supportsBlockingInput = typeof SharedArrayBuffer !== "undefined" && window.crossOriginIsolated === true;
     let worker = null;
@@ -197,6 +197,10 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         runModeBtn.disabled = true;
         setRunButtonState(true);
         resetStdoutBuffer();
+        beginRunCapture();
+        let didRun = false;
+        let runOk = false;
+        let durationMs = 0;
         try {
             const code = getCodeForMode(mode);
             if (!code || !code.trim()) {
@@ -229,9 +233,12 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             });
             const runMessage = { type: "run", code };
             postToWorker(runMessage);
+            didRun = true;
             const ok = await runCompletionPromise;
+            runOk = ok;
             flushStdoutBuffer();
             const dt = performance.now() - runStart;
+            durationMs = dt;
             if (prefs.showExecTime) {
                 addConsoleLine(`Finished in ${formatDuration(dt)}.`, { dim: true, system: true });
             }
@@ -240,6 +247,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             }
         }
         catch (err) {
+            runOk = false;
             const msg = (_b = (_a = err === null || err === void 0 ? void 0 : err.toString) === null || _a === void 0 ? void 0 : _a.call(err)) !== null && _b !== void 0 ? _b : String(err);
             msg.split("\n").forEach((l) => {
                 if (l.trim())
@@ -248,6 +256,14 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             addConsoleLine("Finished with errors.", { dim: true, system: true });
         }
         finally {
+            if (didRun) {
+                onRunFinished({
+                    ok: runOk,
+                    durationMs,
+                    stdout: getRunStdout(),
+                    interrupted: interruptedRun
+                });
+            }
             interruptedRun = false;
             state.isRunning = false;
             updateStatusBar();

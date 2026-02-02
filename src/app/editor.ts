@@ -40,9 +40,7 @@ export function createEditorController(
     const curr = editor.getValue();
     onDirtyChange(curr !== lastSavedContent);
     saveDraftDebounced();
-    if (dom.printOverlay.classList.contains("active")) {
-      onChange?.();
-    }
+    onChange?.();
   });
 
   function getCurrentCellCode() {

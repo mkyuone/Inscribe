@@ -16,6 +16,7 @@ export type DomRefs = {
   moreBtn: HTMLButtonElement;
   moreMenu: HTMLDivElement;
   shareMenuBtn: HTMLButtonElement;
+  historyBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
   settingsBtn: HTMLButtonElement;
   aboutBtn: HTMLButtonElement;
@@ -45,6 +46,17 @@ export type DomRefs = {
   printTimestamp: HTMLInputElement;
   printContentNote: HTMLDivElement;
   exportRoot: HTMLDivElement;
+  shareOverlay: HTMLDivElement;
+  shareCancelBtn: HTMLButtonElement;
+  shareConfirmBtn: HTMLButtonElement;
+  shareIncludeEdits: HTMLInputElement;
+  shareIncludeOutput: HTMLInputElement;
+  shareSizeNote: HTMLDivElement;
+  historyOverlay: HTMLDivElement;
+  historyList: HTMLDivElement;
+  historyDiff: HTMLDivElement;
+  historyCloseBtn: HTMLButtonElement;
+  historyRestoreBtn: HTMLButtonElement;
   shareWarnOverlay: HTMLDivElement;
   shareWarnText: HTMLDivElement;
   shareWarnCancelBtn: HTMLButtonElement;
@@ -110,6 +122,7 @@ export function getDomRefs(): DomRefs {
     moreBtn: byId<HTMLButtonElement>("moreBtn"),
     moreMenu: byId<HTMLDivElement>("moreMenu"),
     shareMenuBtn: byId<HTMLButtonElement>("shareMenuBtn"),
+    historyBtn: byId<HTMLButtonElement>("historyBtn"),
     resetBtn: byId<HTMLButtonElement>("resetBtn"),
     settingsBtn: byId<HTMLButtonElement>("settingsBtn"),
     aboutBtn: byId<HTMLButtonElement>("aboutBtn"),
@@ -139,6 +152,17 @@ export function getDomRefs(): DomRefs {
     printTimestamp: byId<HTMLInputElement>("printTimestamp"),
     printContentNote: byId<HTMLDivElement>("printContentNote"),
     exportRoot: byId<HTMLDivElement>("exportRoot"),
+    shareOverlay: byId<HTMLDivElement>("shareOverlay"),
+    shareCancelBtn: byId<HTMLButtonElement>("shareCancelBtn"),
+    shareConfirmBtn: byId<HTMLButtonElement>("shareConfirmBtn"),
+    shareIncludeEdits: byId<HTMLInputElement>("shareIncludeEdits"),
+    shareIncludeOutput: byId<HTMLInputElement>("shareIncludeOutput"),
+    shareSizeNote: byId<HTMLDivElement>("shareSizeNote"),
+    historyOverlay: byId<HTMLDivElement>("historyOverlay"),
+    historyList: byId<HTMLDivElement>("historyList"),
+    historyDiff: byId<HTMLDivElement>("historyDiff"),
+    historyCloseBtn: byId<HTMLButtonElement>("historyCloseBtn"),
+    historyRestoreBtn: byId<HTMLButtonElement>("historyRestoreBtn"),
     shareWarnOverlay: byId<HTMLDivElement>("shareWarnOverlay"),
     shareWarnText: byId<HTMLDivElement>("shareWarnText"),
     shareWarnCancelBtn: byId<HTMLButtonElement>("shareWarnCancelBtn"),

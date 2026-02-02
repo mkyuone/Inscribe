@@ -10,6 +10,8 @@ export type ConsoleController = {
   clearWithUndo: () => void;
   undoClear: () => void;
   collectOutput: () => string;
+  beginRunCapture: () => void;
+  getRunStdout: () => string;
   handleStdout: (text: string) => void;
   flushStdoutBuffer: () => void;
   resetStdoutBuffer: () => void;
@@ -20,6 +22,7 @@ export function createConsoleController(dom: DomRefs): ConsoleController {
   let consoleBackup: string | null = null;
   let undoTimer: ReturnType<typeof setTimeout> | null = null;
   let stdoutBuffer = "";
+  let runStdout = "";
 
   function addLine(
     text: string,
@@ -42,8 +45,17 @@ export function createConsoleController(dom: DomRefs): ConsoleController {
     stdoutBuffer = "";
   }
 
+  function beginRunCapture() {
+    runStdout = "";
+  }
+
+  function getRunStdout() {
+    return runStdout.replace(/\s+$/g, "");
+  }
+
   function handleStdout(text: string) {
     const normalized = String(text ?? "").replace(/\r/g, "");
+    runStdout += normalized;
     stdoutBuffer += normalized;
     const lines = stdoutBuffer.split("\n");
     stdoutBuffer = lines.pop() ?? "";
@@ -112,6 +124,8 @@ export function createConsoleController(dom: DomRefs): ConsoleController {
     clearWithUndo,
     undoClear,
     collectOutput,
+    beginRunCapture,
+    getRunStdout,
     handleStdout,
     flushStdoutBuffer,
     resetStdoutBuffer,

@@ -922,6 +922,143 @@
   .modalSettings .settingsCardTitle{
     letter-spacing:0.08em;
   }
+  .modalShare{
+    width:min(440px, 94vw);
+  }
+  .shareOptions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:12px;
+    padding:12px;
+    background:rgba(15,23,42,0.03);
+    margin-bottom:12px;
+  }
+  .shareOptions .settingsLabel{
+    flex:0 0 auto;
+    width:100%;
+    justify-content:flex-start;
+  }
+  .shareOptions .settingsLabel span{
+    flex:1;
+  }
+  .shareNote{
+    font-size:12.5px;
+    color:rgba(15,23,42,0.64);
+  }
+  .modalHistory{
+    width:min(920px, 96vw);
+    max-height:calc(100vh - 120px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .historyGrid{
+    display:grid;
+    grid-template-columns:minmax(220px, 1fr) 2fr;
+    gap:12px;
+    margin-top:8px;
+  }
+  .historyList{
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:12px;
+    background:rgba(15,23,42,0.02);
+    padding:8px;
+    max-height:360px;
+    overflow:auto;
+  }
+  .historyEmpty{
+    font-size:13px;
+    color:rgba(15,23,42,0.55);
+    padding:8px;
+  }
+  .historyItem{
+    width:100%;
+    text-align:left;
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:10px;
+    padding:8px 10px;
+    background:rgba(255,255,255,0.7);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    transition:transform var(--tFast) var(--ease), border-color var(--tFast) var(--ease);
+  }
+  .historyItem + .historyItem{
+    margin-top:8px;
+  }
+  .historyItem:hover{
+    transform:translateY(-1px);
+    border-color:rgba(37,99,235,0.25);
+  }
+  .historyItem.active{
+    border-color:rgba(37,99,235,0.55);
+    background:rgba(37,99,235,0.08);
+  }
+  .historyItemTitle{
+    font-size:13px;
+    font-weight:600;
+    color:rgba(15,23,42,0.86);
+  }
+  .historyItemMeta{
+    font-size:12px;
+    color:rgba(15,23,42,0.6);
+  }
+  .historyPreview{
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:12px;
+    background:rgba(255,255,255,0.7);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .historyPreviewTitle{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:rgba(15,23,42,0.55);
+    padding:8px 10px 0;
+  }
+  .historyDiff{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12px;
+    line-height:1.5;
+    padding:8px 10px 10px;
+    overflow:auto;
+    max-height:360px;
+  }
+  .diffLine{
+    display:flex;
+    gap:8px;
+    white-space:pre;
+  }
+  .diffPrefix{
+    width:12px;
+    opacity:0.6;
+  }
+  .diffLine.add{
+    background:rgba(16,185,129,0.10);
+  }
+  .diffLine.remove{
+    background:rgba(239,68,68,0.10);
+  }
+  .diffLine.equal{
+    background:transparent;
+  }
+  .diffEmpty{
+    font-size:13px;
+    color:rgba(15,23,42,0.6);
+  }
+  @media (max-width:760px){
+    .historyGrid{
+      grid-template-columns:1fr;
+    }
+    .historyList,
+    .historyDiff{
+      max-height:220px;
+    }
+  }
   .warnBlock{
     display:flex;
     align-items:flex-start;
@@ -1621,6 +1758,40 @@
   }
   html[data-theme="dark"] .settingsCardTitle .material-icons{
     color:rgba(226,232,240,0.6);
+  }
+  html[data-theme="dark"] .shareOptions{
+    border-color:rgba(148,163,184,0.2);
+    background:rgba(148,163,184,0.08);
+  }
+  html[data-theme="dark"] .shareNote{
+    color:rgba(226,232,240,0.65);
+  }
+  html[data-theme="dark"] .historyList,
+  html[data-theme="dark"] .historyPreview{
+    border-color:rgba(148,163,184,0.2);
+    background:rgba(148,163,184,0.08);
+  }
+  html[data-theme="dark"] .historyItem{
+    border-color:rgba(148,163,184,0.2);
+    background:rgba(15,23,42,0.7);
+  }
+  html[data-theme="dark"] .historyItem.active{
+    border-color:rgba(96,165,250,0.6);
+    background:rgba(96,165,250,0.18);
+  }
+  html[data-theme="dark"] .historyItemTitle{
+    color:rgba(226,232,240,0.88);
+  }
+  html[data-theme="dark"] .historyItemMeta,
+  html[data-theme="dark"] .historyEmpty,
+  html[data-theme="dark"] .diffEmpty{
+    color:rgba(226,232,240,0.6);
+  }
+  html[data-theme="dark"] .diffLine.add{
+    background:rgba(16,185,129,0.16);
+  }
+  html[data-theme="dark"] .diffLine.remove{
+    background:rgba(239,68,68,0.16);
   }
   html[data-theme="dark"] .settingsSection{
     border-top:1px solid rgba(148,163,184,0.18);

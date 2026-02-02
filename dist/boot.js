@@ -5,6 +5,8 @@ import { createConsoleController } from "./app/console.js";
 import { getDomRefs } from "./app/dom-refs.js";
 import { createEditorController } from "./app/editor.js";
 import { createFileController } from "./app/files.js";
+import { createHistoryController } from "./app/history.js";
+import { createHistoryUiController } from "./app/history-ui.js";
 import { setupConsoleInput } from "./app/input.js";
 import { createPrintController } from "./app/print.js";
 import { createPyodideController } from "./app/pyodide.js";
@@ -33,6 +35,7 @@ function waitForGlobals(timeoutMs = 9000) {
 }
 let booted = false;
 export async function boot() {
+    var _a, _b;
     if (booted)
         return;
     booted = true;
@@ -102,10 +105,31 @@ export async function boot() {
     consoleApi.attachStdoutHandlers();
     const inputCtrl = setupConsoleInput(dom.consoleEl);
     let updatePrintConfirmState = () => { };
+    const historyCtrl = createHistoryController();
+    let lastHistoryCode = "";
+    let lastHistoryTs = 0;
+    let recordAutoSnapshot = () => { };
     const editorCtrl = createEditorController(dom, prefs, (isDirty) => {
         state.isDirty = !!isDirty;
         updateStatusBar(state, dom);
-    }, () => updatePrintConfirmState());
+    }, () => {
+        if (dom.printOverlay.classList.contains("active"))
+            updatePrintConfirmState();
+        recordAutoSnapshot();
+    });
+    recordAutoSnapshot = debounce(() => {
+        const code = editorCtrl.getValue();
+        if (!code.trim())
+            return;
+        if (code === lastHistoryCode)
+            return;
+        const now = Date.now();
+        if (now - lastHistoryTs < 15000)
+            return;
+        lastHistoryCode = code;
+        lastHistoryTs = now;
+        void historyCtrl.addEdit({ ts: now, kind: "auto", code });
+    }, 15000);
     const refocusEditor = createRefocusEditor(dom, editorCtrl.editor);
     const fileCtrl = createFileController(dom, editorCtrl.editor, (name) => {
         setFilenameStatus(name, dom);
@@ -113,22 +137,47 @@ export async function boot() {
     }, () => {
         editorCtrl.markSaved();
     }, consoleApi.addLine, refocusEditor);
+    const saveWithHistory = () => {
+        const code = editorCtrl.getValue();
+        if (code.trim()) {
+            const now = Date.now();
+            lastHistoryCode = code;
+            lastHistoryTs = now;
+            void historyCtrl.addEdit({ ts: now, kind: "manual", code });
+        }
+        fileCtrl.saveFile();
+    };
     let ui;
     let printCtrl;
     let pyodideCtrl;
+    const historyUi = createHistoryUiController(dom, historyCtrl, editorCtrl.editor, refocusEditor);
     const runDefault = () => {
         if (state.isRunning) {
             pyodideCtrl.stopExecution();
             return;
         }
+        const code = editorCtrl.getValue();
+        if (code.trim()) {
+            const now = Date.now();
+            lastHistoryCode = code;
+            lastHistoryTs = now;
+            void historyCtrl.addEdit({ ts: now, kind: "run", code });
+        }
         void pyodideCtrl.runCode(state.runMode);
     };
     const runCell = () => {
+        const code = editorCtrl.getValue();
+        if (code.trim()) {
+            const now = Date.now();
+            lastHistoryCode = code;
+            lastHistoryTs = now;
+            void historyCtrl.addEdit({ ts: now, kind: "run", code });
+        }
         void pyodideCtrl.runCode("cell");
     };
     const openPrintModal = () => printCtrl.openPrintModal();
     const openSettings = () => ui.openSettings();
-    ui = createUiController(dom, editorCtrl.editor, refocusEditor, runDefault, runCell, () => fileCtrl.saveFile(), () => fileCtrl.openFile(), openPrintModal, openSettings);
+    ui = createUiController(dom, editorCtrl.editor, refocusEditor, runDefault, runCell, saveWithHistory, () => fileCtrl.openFile(), openPrintModal, openSettings);
     printCtrl = createPrintController(dom, () => editorCtrl.getValue(), consoleApi.collectOutput, ui.closeMenu, ui.openPrint, ui.closePrint);
     updatePrintConfirmState = printCtrl.updatePrintConfirmState;
     const confirmAsyncioRun = () => new Promise((resolve) => {
@@ -156,8 +205,17 @@ export async function boot() {
         dom.asyncWarnConfirmBtn.addEventListener("click", onConfirm);
         dom.asyncWarnOverlay.addEventListener("click", onBackdrop);
     });
-    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.flushStdoutBuffer, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."));
-    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor);
+    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.beginRunCapture, consoleApi.flushStdoutBuffer, consoleApi.getRunStdout, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."), ({ stdout, interrupted }) => {
+        if (!stdout || !stdout.trim())
+            return;
+        const now = Date.now();
+        void historyCtrl.addOutput({
+            ts: now,
+            kind: interrupted ? "interrupt" : "run",
+            stdout
+        });
+    });
+    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor, historyCtrl);
     fileCtrl.setFilename(safeLS.get(LS_KEYS.FILENAME) || "untitled.py");
     dom.aboutVersion.textContent = `v${APP_VERSION}`;
     dom.aboutBuildTime.textContent = BUILD_TIME;
@@ -169,12 +227,28 @@ export async function boot() {
         fileCtrl.setFilename("shared.py");
         editorCtrl.markSaved();
         safeLS.set(LS_KEYS.DRAFT, editorCtrl.getValue());
+        lastHistoryCode = shared.code;
+        lastHistoryTs = Date.now();
+        void historyCtrl.addEdit({ ts: lastHistoryTs, kind: "shared", code: shared.code });
+        if (shared.history) {
+            void historyCtrl.importShared(shared.history);
+        }
         consoleApi.addLine("Loaded shared code from link.", { dim: true, system: true });
         shareCtrl.showToast("Shared code loaded", "This editor opened code from a share link.");
+        if ((_b = (_a = shared.history) === null || _a === void 0 ? void 0 : _a.outputs) === null || _b === void 0 ? void 0 : _b.length) {
+            consoleApi.addLine("Shared output:", { dim: true, system: true });
+            shared.history.outputs.forEach((entry) => {
+                entry.stdout.split("\n").forEach((line) => {
+                    consoleApi.addLine(line);
+                });
+            });
+        }
     }
     else if (draft && draft.trim().length) {
         editorCtrl.setValue(draft);
         editorCtrl.markSaved();
+        lastHistoryCode = draft;
+        lastHistoryTs = Date.now();
         consoleApi.addLine("Restored previous draft.", { dim: true, system: true });
     }
     function toggleWrap() {
@@ -211,7 +285,7 @@ export async function boot() {
         refocusEditor();
     });
     dom.openBtn.addEventListener("click", () => fileCtrl.openFile());
-    dom.saveBtn.addEventListener("click", () => fileCtrl.saveFile());
+    dom.saveBtn.addEventListener("click", saveWithHistory);
     dom.shareBtn.addEventListener("click", () => {
         void shareCtrl.shareCode();
     });
@@ -219,6 +293,10 @@ export async function boot() {
     dom.printBtn.addEventListener("click", () => {
         ui.closeMenu();
         openPrintModal();
+    });
+    dom.historyBtn.addEventListener("click", () => {
+        ui.closeMenu();
+        historyUi.openHistory();
     });
     dom.shareMenuBtn.addEventListener("click", () => {
         ui.closeMenu();

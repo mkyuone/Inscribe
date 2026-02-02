@@ -140,6 +140,11 @@
                 <span class="miHint" id="hintPrint">⌘ P</span>
               </button>
 
+              <button class="menuItem" id="historyBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">history</span>
+                <span class="miLabel">History</span>
+              </button>
+
               <button class="menuItem" id="shareMenuBtn" type="button" role="menuitem">
                 <span class="material-icons" aria-hidden="true">share</span>
                 <span class="miLabel">Share link</span>
@@ -452,6 +457,60 @@
       <div class="modalRow">
         <button class="toolBtn" id="printCancelBtn" type="button">Cancel</button>
         <button class="toolBtn primary" id="printConfirmBtn" type="button">Print / Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share modal -->
+  <div class="overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="modal modalShare">
+      <div class="settingsHeader">
+        <div>
+          <h2 id="shareTitle">Share link</h2>
+          <p class="settingsIntro">Entire payload stays in the link. Anyone with the link can see it.</p>
+        </div>
+      </div>
+
+      <section class="shareOptions" aria-label="Share options">
+        <label class="settingsLabel toggle" for="shareIncludeEdits">
+          <input id="shareIncludeEdits" type="checkbox" />
+          <span>Include Edit History</span>
+        </label>
+        <label class="settingsLabel toggle" for="shareIncludeOutput">
+          <input id="shareIncludeOutput" type="checkbox" />
+          <span>Include Output History</span>
+        </label>
+        <div class="shareNote" id="shareSizeNote">History is trimmed to keep links around 10KB.</div>
+      </section>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="shareCancelBtn" type="button">Cancel</button>
+        <button class="toolBtn primary" id="shareConfirmBtn" type="button">Copy link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History modal -->
+  <div class="overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal modalHistory">
+      <div class="settingsHeader">
+        <div>
+          <h2 id="historyTitle">Version history</h2>
+          <p class="settingsIntro">Preview diffs before replacing the editor buffer.</p>
+        </div>
+      </div>
+
+      <div class="historyGrid">
+        <div class="historyList" id="historyList" role="listbox" aria-label="Snapshots"></div>
+        <div class="historyPreview">
+          <div class="historyPreviewTitle">Diff preview</div>
+          <div class="historyDiff" id="historyDiff"></div>
+        </div>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="historyCloseBtn" type="button">Close</button>
+        <button class="toolBtn primary" id="historyRestoreBtn" type="button" disabled>Restore snapshot</button>
       </div>
     </div>
   </div>
