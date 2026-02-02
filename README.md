@@ -40,6 +40,16 @@ It’s designed to be minimal, fast, and distraction‑free—ideal for learning
 
 </details>
 
+<details>
+<summary><strong>Version history (local)</strong></summary>
+
+- Stored locally in your browser via IndexedDB (no server sync).
+- Autosaves roughly every 15 seconds while you edit (only if content changed).
+- Captures on Run, Save, and when loading shared code.
+- Retention is count-based: keeps up to ~200 edit snapshots and ~120 output entries, then prunes oldest.
+
+</details>
+
 ## Why Inscribe?
 
 Inscribe is intentionally not a full IDE. It’s built to:
