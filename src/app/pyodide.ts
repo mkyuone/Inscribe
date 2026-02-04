@@ -1,5 +1,6 @@
 import { formatDuration } from "../utils/time.js";
 import { AppState, RunMode } from "./types.js";
+import type { VariableItem } from "./variables.js";
 import { BUILD_TIME } from "../version.js";
 
 export type PyodideController = {
@@ -35,6 +36,7 @@ type WorkerInputRequestMessage = { type: "input"; prompt: string };
 type WorkerErrorLineMessage = { type: "error-line"; text: string };
 type WorkerRunCompleteMessage = { type: "run-complete"; ok: boolean; durationMs?: number };
 type WorkerInterruptedMessage = { type: "interrupted" };
+type WorkerVarsMessage = { type: "vars"; items: VariableItem[]; truncated?: boolean };
 
 type WorkerInboundMessage =
   | WorkerReadyMessage
@@ -44,7 +46,8 @@ type WorkerInboundMessage =
   | WorkerInputRequestMessage
   | WorkerErrorLineMessage
   | WorkerRunCompleteMessage
-  | WorkerInterruptedMessage;
+  | WorkerInterruptedMessage
+  | WorkerVarsMessage;
 
 export function createPyodideController(
   state: AppState,
@@ -67,6 +70,7 @@ export function createPyodideController(
   showIsolationWarning: () => void,
   confirmAsyncioRun: () => Promise<boolean>,
   onReadyToast: () => void,
+  onVariables: (payload: { items: VariableItem[]; truncated?: boolean }) => void,
   onRunFinished: (result: {
     ok: boolean;
     durationMs: number;
@@ -249,6 +253,9 @@ export function createPyodideController(
         }
         runCompletionPromise = null;
         break;
+      case "vars":
+        onVariables({ items: message.items || [], truncated: message.truncated });
+        break;
       default:
         break;
     }
@@ -267,6 +274,7 @@ export function createPyodideController(
     interruptI32 = null;
     resetStdoutBuffer();
     setReady(false);
+    onVariables({ items: [], truncated: false });
     addConsoleLine("Environment reset. Next run will reload Pyodide.", {
       dim: true,
       system: true

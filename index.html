@@ -207,6 +207,9 @@
               <div class="paneTitle"><span class="dot"></span>Console</div>
             </div>
             <div class="paneActions">
+              <button class="iconBtn" id="varsToggleBtn" type="button" title="Toggle variables" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">list_alt</span>
+              </button>
               <button class="iconBtn danger" id="clearConsoleBtn" type="button" title="Clear console (Undo for 3s)">
                 <span class="material-icons" aria-hidden="true">delete</span>
               </button>
@@ -215,7 +218,18 @@
               </button>
             </div>
           </div>
-          <div id="console" role="log" aria-live="polite"></div>
+          <div class="consoleBody">
+            <div id="console" role="log" aria-live="polite"></div>
+            <div class="varsPane collapsed" id="varsPane">
+              <div class="varsHeader">
+                <div class="varsTitle">Variables</div>
+                <div class="varsMeta" id="varsMeta">0</div>
+              </div>
+              <div class="varsList" id="varsList">
+                <div class="varsEmpty">Run code to see variables.</div>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>
@@ -429,7 +443,7 @@ SOFTWARE.</pre>
 
       <div class="modalRow">
         <button class="toolBtn" id="resetPrefsBtn" type="button">Reset defaults</button>
-        <button class="toolBtn" id="closeSettingsBtn" type="button">Close</button>
+        <button class="toolBtn primary" id="closeSettingsBtn" type="button">Close</button>
       </div>
     </div>
   </div>

@@ -182,6 +182,59 @@ if _shadowed:
 del _shadowed, _name, _COMMON_BUILTINS, _bi
 `;
 
+const VARS_SNAPSHOT_CODE = `
+import json, types
+def _inscribe_collect_vars():
+    items = []
+    try:
+        g = globals()
+    except Exception:
+        g = {}
+    for k, v in g.items():
+        if k.startswith("_"):
+            continue
+        if k in ("__builtins__", "js", "sys", "builtins", "pyodide"):
+            continue
+        if isinstance(v, types.ModuleType):
+            continue
+        t = type(v).__name__
+        try:
+            r = repr(v)
+        except Exception:
+            r = "<repr failed>"
+        if len(r) > 140:
+            r = r[:137] + "..."
+        item = {"name": k, "type": t, "repr": r}
+        try:
+            item["size"] = len(v)
+        except Exception:
+            pass
+        items.append(item)
+    items.sort(key=lambda x: x["name"].lower())
+    truncated = False
+    if len(items) > 200:
+        items = items[:200]
+        truncated = True
+    return json.dumps({"items": items, "truncated": truncated})
+_inscribe_collect_vars()
+`;
+
+function postVariablesSnapshot() {
+  if (!pyodide) return;
+  try {
+    const raw = mainGlobals
+      ? pyodide.runPython(VARS_SNAPSHOT_CODE, { globals: mainGlobals })
+      : pyodide.runPython(VARS_SNAPSHOT_CODE);
+    const json = typeof raw === "string" ? raw : String(raw);
+    const payload = JSON.parse(json);
+    if (payload && typeof payload === "object") {
+      post("vars", payload as Record<string, unknown>);
+    }
+  } catch {
+    // ignore snapshot errors
+  }
+}
+
 ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
   const message = event.data;
   try {
@@ -202,6 +255,7 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
     if (message.type === "run") {
       await ensurePyodide();
       resetRunTiming();
+      let runOk = false;
       try {
         if (mainGlobals) {
           pyodide.runPython(BUILTIN_GUARD_CODE, { globals: mainGlobals });
@@ -210,8 +264,10 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
           pyodide.runPython(BUILTIN_GUARD_CODE);
           await pyodide.runPythonAsync(message.code);
         }
+        runOk = true;
         if (pauseDepth > 0) endPause();
         const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
+        postVariablesSnapshot();
         post("run-complete", { ok: true, durationMs });
       } catch (err) {
         const msg = err?.toString?.() ?? String(err);
@@ -224,7 +280,8 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
         }
         if (pauseDepth > 0) endPause();
         const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
-        post("run-complete", { ok: false, durationMs });
+        postVariablesSnapshot();
+        post("run-complete", { ok: runOk, durationMs });
       }
       return;
     }

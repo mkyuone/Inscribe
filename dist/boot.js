@@ -10,6 +10,7 @@ import { createHistoryUiController } from "./app/history-ui.js";
 import { setupConsoleInput } from "./app/input.js";
 import { createPrintController } from "./app/print.js";
 import { createPyodideController } from "./app/pyodide.js";
+import { createVariablesController } from "./app/variables.js";
 import { registerServiceWorker } from "./app/pwa.js";
 import { loadPrefs, applyPrefs, savePrefs, bindPrefsUI, resetPrefs } from "./app/prefs.js";
 import { createShareController } from "./app/share.js";
@@ -103,6 +104,7 @@ export async function boot() {
     const consoleApi = createConsoleController(dom);
     consoleApi.attachStdoutHandlers();
     const inputCtrl = setupConsoleInput(dom.consoleEl);
+    const varsCtrl = createVariablesController(dom);
     let updatePrintConfirmState = () => { };
     const historyCtrl = createHistoryController();
     let lastHistoryCode = "";
@@ -204,7 +206,9 @@ export async function boot() {
         dom.asyncWarnConfirmBtn.addEventListener("click", onConfirm);
         dom.asyncWarnOverlay.addEventListener("click", onBackdrop);
     });
-    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.beginRunCapture, consoleApi.flushStdoutBuffer, consoleApi.getRunStdout, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."), ({ stdout, interrupted }) => {
+    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.beginRunCapture, consoleApi.flushStdoutBuffer, consoleApi.getRunStdout, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."), ({ items, truncated }) => {
+        varsCtrl.setVariables(items, truncated);
+    }, ({ stdout, interrupted }) => {
         if (!stdout || !stdout.trim())
             return;
         const now = Date.now();
@@ -320,6 +324,10 @@ export async function boot() {
     dom.wrapBtn.addEventListener("click", toggleWrap);
     dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
     dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);
+    dom.varsToggleBtn.addEventListener("click", () => {
+        varsCtrl.toggle();
+        refocusEditor();
+    });
     dom.closeAboutBtn.addEventListener("click", () => {
         ui.closeAbout();
         refocusEditor();

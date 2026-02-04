@@ -29,6 +29,10 @@ export type DomRefs = {
   consoleEl: HTMLDivElement;
   clearConsoleBtn: HTMLButtonElement;
   undoClearBtn: HTMLButtonElement;
+  varsToggleBtn: HTMLButtonElement;
+  varsPane: HTMLDivElement;
+  varsList: HTMLDivElement;
+  varsMeta: HTMLDivElement;
   aboutOverlay: HTMLDivElement;
   closeAboutBtn: HTMLButtonElement;
   licenseLink: HTMLButtonElement;
@@ -133,6 +137,10 @@ export function getDomRefs(): DomRefs {
     consoleEl: byId<HTMLDivElement>("console"),
     clearConsoleBtn: byId<HTMLButtonElement>("clearConsoleBtn"),
     undoClearBtn: byId<HTMLButtonElement>("undoClearBtn"),
+    varsToggleBtn: byId<HTMLButtonElement>("varsToggleBtn"),
+    varsPane: byId<HTMLDivElement>("varsPane"),
+    varsList: byId<HTMLDivElement>("varsList"),
+    varsMeta: byId<HTMLDivElement>("varsMeta"),
     aboutOverlay: byId<HTMLDivElement>("aboutOverlay"),
     closeAboutBtn: byId<HTMLButtonElement>("closeAboutBtn"),
     licenseLink: byId<HTMLButtonElement>("licenseLink"),

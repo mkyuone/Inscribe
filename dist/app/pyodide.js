@@ -1,6 +1,6 @@
 import { formatDuration } from "../utils/time.js";
 import { BUILD_TIME } from "../version.js";
-export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onRunFinished) {
+export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onVariables, onRunFinished) {
     const inputMaxBytes = 64 * 1024;
     const supportsBlockingInput = typeof SharedArrayBuffer !== "undefined" && window.crossOriginIsolated === true;
     let worker = null;
@@ -166,6 +166,9 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
                 }
                 runCompletionPromise = null;
                 break;
+            case "vars":
+                onVariables({ items: message.items || [], truncated: message.truncated });
+                break;
             default:
                 break;
         }
@@ -183,6 +186,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         interruptI32 = null;
         resetStdoutBuffer();
         setReady(false);
+        onVariables({ items: [], truncated: false });
         addConsoleLine("Environment reset. Next run will reload Pyodide.", {
             dim: true,
             system: true

@@ -10,6 +10,7 @@ import { createHistoryUiController } from "./app/history-ui.js";
 import { setupConsoleInput } from "./app/input.js";
 import { createPrintController, PrintController } from "./app/print.js";
 import { createPyodideController, PyodideController } from "./app/pyodide.js";
+import { createVariablesController } from "./app/variables.js";
 import { registerServiceWorker } from "./app/pwa.js";
 import { loadPrefs, applyPrefs, savePrefs, bindPrefsUI, resetPrefs } from "./app/prefs.js";
 import { createShareController } from "./app/share.js";
@@ -111,6 +112,7 @@ export async function boot() {
   consoleApi.attachStdoutHandlers();
 
   const inputCtrl = setupConsoleInput(dom.consoleEl);
+  const varsCtrl = createVariablesController(dom);
 
   let updatePrintConfirmState = () => {};
 
@@ -275,6 +277,9 @@ export async function boot() {
     showIsolationWarning,
     confirmAsyncioRun,
     () => showSystemToast("Pyodide ready", "You can run code now."),
+    ({ items, truncated }) => {
+      varsCtrl.setVariables(items, truncated);
+    },
     ({ stdout, interrupted }) => {
       if (!stdout || !stdout.trim()) return;
       const now = Date.now();
@@ -407,6 +412,10 @@ export async function boot() {
 
   dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
   dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);
+  dom.varsToggleBtn.addEventListener("click", () => {
+    varsCtrl.toggle();
+    refocusEditor();
+  });
 
   dom.closeAboutBtn.addEventListener("click", () => {
     ui.closeAbout();

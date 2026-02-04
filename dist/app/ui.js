@@ -2,7 +2,14 @@ import { escapeHtml } from "../utils/dom.js";
 import { isMac } from "../utils/platform.js";
 export function createRefocusEditor(dom, editor) {
     return () => {
-        [dom.openBtn, dom.saveBtn, dom.shareBtn, dom.moreBtn, dom.runModeBtn].forEach((b) => b && b.blur());
+        [
+            dom.openBtn,
+            dom.saveBtn,
+            dom.shareBtn,
+            dom.moreBtn,
+            dom.runModeBtn,
+            dom.varsToggleBtn
+        ].forEach((b) => b && b.blur());
         requestAnimationFrame(() => editor.focus());
     };
 }

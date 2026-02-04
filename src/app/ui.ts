@@ -29,9 +29,14 @@ export type UiController = {
 
 export function createRefocusEditor(dom: DomRefs, editor: CodeMirrorEditor) {
   return () => {
-    [dom.openBtn, dom.saveBtn, dom.shareBtn, dom.moreBtn, dom.runModeBtn].forEach((b) =>
-      b && b.blur()
-    );
+    [
+      dom.openBtn,
+      dom.saveBtn,
+      dom.shareBtn,
+      dom.moreBtn,
+      dom.runModeBtn,
+      dom.varsToggleBtn
+    ].forEach((b) => b && b.blur());
     requestAnimationFrame(() => editor.focus());
   };
 }
