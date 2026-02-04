@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 import { formatDuration } from "../utils/time.js";
 import { BUILD_TIME } from "../version.js";
 export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onVariables, onRunFinished) {

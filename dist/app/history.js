@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 const DB_NAME = "inscribe-history";
 const DB_VERSION = 1;
 const STORE_EDITS = "edits";

@@ -1,4 +1,6 @@
 "use strict";
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 /// <reference lib="webworker" />
 const ctx = self;
 let pyodide = null;

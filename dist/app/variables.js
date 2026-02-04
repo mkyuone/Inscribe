@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 import { escapeHtml } from "../utils/dom.js";
 function formatType(item) {
     if (typeof item.size === "number") {

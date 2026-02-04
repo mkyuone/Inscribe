@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 import { DEFAULT_PREFS, LS_KEYS } from "../constants.js";
 import { safeLS } from "../utils/storage.js";
 export function loadPrefs() {

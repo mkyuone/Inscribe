@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 import { escapeHtml } from "../utils/dom.js";
 import { isMac } from "../utils/platform.js";
 export function createRefocusEditor(dom, editor) {

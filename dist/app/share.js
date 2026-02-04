@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 const SHARE_PREFIX = "v1:";
 export function createShareController(dom, getCode, addConsoleLine, saveFile, refocusEditor) {
     let toastTimer = null;

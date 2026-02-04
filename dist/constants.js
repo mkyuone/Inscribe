@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 export const LS_KEYS = {
     DRAFT: "inscribe_draft_code_v5",
     PREFS: "inscribe_prefs_v5",

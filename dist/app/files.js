@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
 export function createFileController(dom, editor, onFilenameChange, onSaved, onConsoleLine, refocusEditor) {
     let currentFilename = "untitled.py";
     function setFilename(name) {
