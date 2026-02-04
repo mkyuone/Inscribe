@@ -1697,6 +1697,9 @@
   html[data-theme="dark"] .sbDot{
     background:rgba(148,163,184,0.45);
   }
+  html[data-theme="dark"] .good .sbDot{ background:rgba(34,197,94,0.85); }
+  html[data-theme="dark"] .warn .sbDot{ background:rgba(251,191,36,0.85); }
+  html[data-theme="dark"] .bad  .sbDot{ background:rgba(248,113,113,0.85); }
 
   html[data-theme="dark"] .toast{
     border:1px solid rgba(148,163,184,0.2);
