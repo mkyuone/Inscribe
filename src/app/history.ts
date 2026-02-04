@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 export type HistoryEditKind = "auto" | "run" | "manual" | "restore" | "shared";
 export type HistoryOutputKind = "run" | "interrupt" | "shared";
 

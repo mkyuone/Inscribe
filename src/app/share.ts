@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 import { DomRefs } from "./dom-refs.js";
 
 type ToastFn = (title: string, desc: string, icon?: string) => void;

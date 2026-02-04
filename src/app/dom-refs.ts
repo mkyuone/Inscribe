@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 import { byId } from "../utils/dom.js";
 
 export type DomRefs = {

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 import { formatDuration } from "../utils/time.js";
 import { AppState, RunMode } from "./types.js";
 import type { VariableItem } from "./variables.js";

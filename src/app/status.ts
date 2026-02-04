@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 import { setClass } from "../utils/dom.js";
 import { AppState } from "./types.js";
 import { DomRefs } from "./dom-refs.js";

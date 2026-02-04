@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2023-2026 Mark Yu
+
 import { DEFAULT_PREFS } from "../constants.js";
 
 export type RunMode = "all" | "selection" | "cell";
