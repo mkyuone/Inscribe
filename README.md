@@ -1,7 +1,6 @@
 # Inscribe Editor
 
 [![Version](https://img.shields.io/github/v/tag/mkyuone/Inscribe?style=for-the-badge)](VERSION)
-[![License](https://img.shields.io/github/license/mkyuone/Inscribe?style=for-the-badge)](LICENSE)
 [![Website](https://img.shields.io/website?style=for-the-badge&url=https%3A%2F%2Fpy.mkyu.one)](https://py.mkyu.one)
 [![TypeScript](https://img.shields.io/github/languages/top/mkyuone/Inscribe?style=for-the-badge)](https://www.typescriptlang.org/)
 
