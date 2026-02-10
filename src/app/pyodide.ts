@@ -99,6 +99,9 @@ export function createPyodideController(
   let warnedAsyncioRun = false;
   let readyNotified = false;
   let interruptedRun = false;
+  const RUN_STOP_SWITCH_DELAY_MS = 600;
+  let runStopStateTimer: number | null = null;
+  let activeRunToken = 0;
 
   const runIcon = runBtn.querySelector(".material-icons") as HTMLSpanElement | null;
   const runLabelEl = runBtn.querySelector("#runLabel") as HTMLSpanElement | null;
@@ -124,6 +127,22 @@ export function createPyodideController(
       runBtn.title = `Run ${getRunModeLabel(state.runMode)} (Cmd/Ctrl + Enter)`;
       runBtn.setAttribute("aria-label", "Run code");
     }
+  }
+
+  function clearRunStopStateTimer() {
+    if (runStopStateTimer !== null) {
+      window.clearTimeout(runStopStateTimer);
+      runStopStateTimer = null;
+    }
+  }
+
+  function scheduleRunStopState(runToken: number) {
+    clearRunStopStateTimer();
+    runStopStateTimer = window.setTimeout(() => {
+      runStopStateTimer = null;
+      if (!state.isRunning || activeRunToken !== runToken) return;
+      setRunButtonState(true);
+    }, RUN_STOP_SWITCH_DELAY_MS);
   }
 
   function setReady(ready: boolean) {
@@ -289,11 +308,14 @@ export function createPyodideController(
   async function runCode(mode: RunMode = "all") {
     if (state.isRunning) return;
     state.isRunning = true;
+    activeRunToken += 1;
+    const runToken = activeRunToken;
     updateStatusBar();
 
     runBtn.disabled = false;
     runModeBtn.disabled = true;
-    setRunButtonState(true);
+    setRunButtonState(false);
+    scheduleRunStopState(runToken);
     resetStdoutBuffer();
     beginRunCapture();
     lastRunDurationMs = null;
@@ -362,6 +384,7 @@ export function createPyodideController(
       });
       addConsoleLine("Finished with errors.", { dim: true, system: true });
     } finally {
+      clearRunStopStateTimer();
       if (didRun) {
         onRunFinished({
           ok: runOk,
