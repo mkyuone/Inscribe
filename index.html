@@ -14,6 +14,71 @@
 <link rel="manifest" href="assets/favicon/site.webmanifest" />
 <meta name="theme-color" content="#2563eb" />
 
+<script>
+  (() => {
+    const PREFS_KEY = "inscribe_prefs_v5";
+    let splitHorizontal = true;
+    let theme = "light";
+
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.splitHorizontal === "boolean") {
+          splitHorizontal = parsed.splitHorizontal;
+        }
+        if (typeof parsed?.theme === "string") {
+          theme = parsed.theme;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const prefersDark =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const resolvedTheme =
+      theme === "system" ? (prefersDark ? "dark" : "light") : theme === "dark" ? "dark" : "light";
+
+    document.documentElement.dataset.theme = resolvedTheme;
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) {
+      themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
+    }
+
+    const applySplit = () => {
+      const splitPane = document.getElementById("splitPane");
+      const editorPane = document.getElementById("editorPane");
+      if (!splitPane) return false;
+      splitPane.classList.toggle("horizontal", !!splitHorizontal);
+      if (editorPane) {
+        if (splitHorizontal) {
+          editorPane.style.height = "";
+        } else {
+          editorPane.style.width = "";
+        }
+      }
+      return true;
+    };
+
+    if (!applySplit()) {
+      const observer = new MutationObserver(() => {
+        if (applySplit()) observer.disconnect();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          applySplit();
+          observer.disconnect();
+        },
+        { once: true }
+      );
+    }
+  })();
+</script>
+
 <!-- Local fonts -->
 <link rel="stylesheet" href="assets/fonts/fonts.css"/>
 
