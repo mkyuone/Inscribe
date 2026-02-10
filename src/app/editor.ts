@@ -30,7 +30,8 @@ export function createEditorController(
     indentUnit: 4,
     matchBrackets: true,
     viewportMargin: Infinity,
-    lineWrapping: !!prefs.lineWrap
+    lineWrapping: !!prefs.lineWrap,
+    screenReaderLabel: "Python code editor"
   });
 
   let lastSavedContent = editor.getValue();

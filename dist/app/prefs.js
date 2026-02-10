@@ -33,6 +33,7 @@ export function applyPrefs(prefs, editor, dom) {
     editor.setOption("lineWrapping", !!prefs.lineWrap);
     editor.refresh();
     dom.splitPane.classList.toggle("horizontal", !!prefs.splitHorizontal);
+    dom.resizer.setAttribute("aria-orientation", prefs.splitHorizontal ? "vertical" : "horizontal");
     if (prefs.splitHorizontal) {
         dom.editorPane.style.height = "";
     }

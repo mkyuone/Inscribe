@@ -41,8 +41,12 @@ function applyStartupShellPrefs() {
     const prefs = loadPrefs();
     const splitPane = document.getElementById("splitPane");
     const editorPane = document.getElementById("editorPane");
+    const resizer = document.getElementById("dragbar");
     if (splitPane) {
         splitPane.classList.toggle("horizontal", !!prefs.splitHorizontal);
+    }
+    if (resizer) {
+        resizer.setAttribute("aria-orientation", prefs.splitHorizontal ? "vertical" : "horizontal");
     }
     if (editorPane) {
         if (prefs.splitHorizontal) {

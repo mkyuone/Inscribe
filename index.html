@@ -7,6 +7,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Inscribe Editor</title>
+<meta name="description" content="Inscribe is a lightweight in-browser Python editor and runner powered by Pyodide, with file tools, sharing, settings, and version history." />
 <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg" />
 <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon/favicon-96x96.png" />
 <link rel="shortcut icon" href="assets/favicon/favicon.ico" />
@@ -293,10 +294,10 @@
               <span class="findStatus" id="findStatus" role="status" aria-live="polite"></span>
             </div>
           </div>
-          <textarea id="editor">print("Hello, World!")</textarea>
+          <textarea id="editor" aria-label="Python code editor">print("Hello, World!")</textarea>
         </section>
 
-        <div class="resizer" id="dragbar" aria-label="Resize panels"></div>
+        <div class="resizer" id="dragbar" role="separator" aria-orientation="horizontal"></div>
 
         <section class="pane consolePane" id="consolePane">
           <div class="paneHeader">
