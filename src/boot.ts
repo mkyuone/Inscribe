@@ -42,6 +42,36 @@ function waitForGlobals(timeoutMs = 9000) {
   });
 }
 
+function applyStartupShellPrefs() {
+  const prefs = loadPrefs();
+
+  const splitPane = document.getElementById("splitPane");
+  const editorPane = document.getElementById("editorPane") as HTMLDivElement | null;
+
+  if (splitPane) {
+    splitPane.classList.toggle("horizontal", !!prefs.splitHorizontal);
+  }
+  if (editorPane) {
+    if (prefs.splitHorizontal) {
+      editorPane.style.height = "";
+    } else {
+      editorPane.style.width = "";
+    }
+  }
+
+  const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+  const resolvedTheme =
+    prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+  document.documentElement.dataset.theme = resolvedTheme;
+
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) {
+    themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
+  }
+
+  return prefs;
+}
+
 let booted = false;
 
 export async function boot() {
@@ -51,6 +81,7 @@ export async function boot() {
   const consoleFallback = document.getElementById("console");
   const runBtnFallback = document.getElementById("runBtn") as HTMLButtonElement | null;
   const loadingOverlay = document.getElementById("loadingOverlay") as HTMLDivElement | null;
+  const prefs = applyStartupShellPrefs();
 
   function showFatal(msg: string) {
     console.error(msg);
@@ -81,7 +112,6 @@ export async function boot() {
 
   const dom = getDomRefs();
   const state = createInitialState();
-  const prefs = loadPrefs();
 
   const showIsolationWarning = () => {
     dom.isolationBanner.classList.add("show");
@@ -394,9 +424,6 @@ export async function boot() {
   dom.aboutBtn.addEventListener("click", () => {
     ui.closeMenu();
     ui.openAbout();
-  });
-  dom.licenseLink.addEventListener("click", () => {
-    ui.openLicense();
   });
   dom.closeLicenseBtn.addEventListener("click", () => {
     ui.closeLicense();

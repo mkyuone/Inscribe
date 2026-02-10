@@ -38,7 +38,7 @@ export type DomRefs = {
   varsMeta: HTMLDivElement;
   aboutOverlay: HTMLDivElement;
   closeAboutBtn: HTMLButtonElement;
-  licenseLink: HTMLButtonElement;
+  licenseLink: HTMLAnchorElement;
   licenseOverlay: HTMLDivElement;
   closeLicenseBtn: HTMLButtonElement;
   aboutVersion: HTMLSpanElement;
@@ -146,7 +146,7 @@ export function getDomRefs(): DomRefs {
     varsMeta: byId<HTMLDivElement>("varsMeta"),
     aboutOverlay: byId<HTMLDivElement>("aboutOverlay"),
     closeAboutBtn: byId<HTMLButtonElement>("closeAboutBtn"),
-    licenseLink: byId<HTMLButtonElement>("licenseLink"),
+    licenseLink: byId<HTMLAnchorElement>("licenseLink"),
     licenseOverlay: byId<HTMLDivElement>("licenseOverlay"),
     closeLicenseBtn: byId<HTMLButtonElement>("closeLicenseBtn"),
     aboutVersion: byId<HTMLSpanElement>("aboutVersion"),
