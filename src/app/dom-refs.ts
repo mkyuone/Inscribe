@@ -39,9 +39,9 @@ export type DomRefs = {
   replaceInput: HTMLInputElement;
   replaceBtn: HTMLButtonElement;
   replaceAllBtn: HTMLButtonElement;
-  findCaseToggle: HTMLInputElement;
-  findWordToggle: HTMLInputElement;
-  findRegexToggle: HTMLInputElement;
+  findCaseToggle: HTMLButtonElement;
+  findWordToggle: HTMLButtonElement;
+  findRegexToggle: HTMLButtonElement;
   findStatus: HTMLSpanElement;
   splitPane: HTMLDivElement;
   resizer: HTMLDivElement;
@@ -163,9 +163,9 @@ export function getDomRefs(): DomRefs {
     replaceInput: byId<HTMLInputElement>("replaceInput"),
     replaceBtn: byId<HTMLButtonElement>("replaceBtn"),
     replaceAllBtn: byId<HTMLButtonElement>("replaceAllBtn"),
-    findCaseToggle: byId<HTMLInputElement>("findCaseToggle"),
-    findWordToggle: byId<HTMLInputElement>("findWordToggle"),
-    findRegexToggle: byId<HTMLInputElement>("findRegexToggle"),
+    findCaseToggle: byId<HTMLButtonElement>("findCaseToggle"),
+    findWordToggle: byId<HTMLButtonElement>("findWordToggle"),
+    findRegexToggle: byId<HTMLButtonElement>("findRegexToggle"),
     findStatus: byId<HTMLSpanElement>("findStatus"),
     splitPane: byId<HTMLDivElement>("splitPane"),
     resizer: byId<HTMLDivElement>("dragbar"),

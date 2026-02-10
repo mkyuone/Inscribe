@@ -34,11 +34,20 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
     function setReplaceMode(enabled) {
         dom.findBar.classList.toggle("replaceMode", enabled);
         dom.findReplaceModeBtn.setAttribute("aria-pressed", String(enabled));
-        dom.findReplaceModeBtn.textContent = enabled ? "Hide Replace" : "Replace";
     }
     function setStatus(message, isError = false) {
         dom.findStatus.textContent = message;
         dom.findStatus.classList.toggle("error", isError);
+    }
+    function isOptionEnabled(button) {
+        return button.getAttribute("aria-pressed") === "true";
+    }
+    function setOptionEnabled(button, enabled) {
+        button.setAttribute("aria-pressed", String(enabled));
+    }
+    function toggleOption(button) {
+        setOptionEnabled(button, !isOptionEnabled(button));
+        refreshMatches(true);
     }
     function clearMarkers() {
         markers.forEach((marker) => marker.clear());
@@ -48,8 +57,8 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
         const query = dom.findInput.value;
         if (!query)
             return null;
-        const flags = `${dom.findCaseToggle.checked ? "" : "i"}${useGlobal ? "g" : ""}`;
-        const source = dom.findRegexToggle.checked ? query : escapeRegex(query);
+        const flags = `${isOptionEnabled(dom.findCaseToggle) ? "" : "i"}${useGlobal ? "g" : ""}`;
+        const source = isOptionEnabled(dom.findRegexToggle) ? query : escapeRegex(query);
         try {
             return new RegExp(source, flags);
         }
@@ -63,7 +72,7 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
         invalidRegex = false;
         if (!query)
             return [];
-        if (dom.findRegexToggle.checked) {
+        if (isOptionEnabled(dom.findRegexToggle)) {
             const regex = getRegex(true);
             if (!regex) {
                 invalidRegex = true;
@@ -79,14 +88,14 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
                     regex.lastIndex += 1;
                     continue;
                 }
-                if (dom.findWordToggle.checked && !isWholeWord(text, start, end))
+                if (isOptionEnabled(dom.findWordToggle) && !isWholeWord(text, start, end))
                     continue;
                 out.push({ start, end, text: matched });
             }
             return out;
         }
-        const needle = dom.findCaseToggle.checked ? query : query.toLowerCase();
-        const haystack = dom.findCaseToggle.checked ? text : text.toLowerCase();
+        const needle = isOptionEnabled(dom.findCaseToggle) ? query : query.toLowerCase();
+        const haystack = isOptionEnabled(dom.findCaseToggle) ? text : text.toLowerCase();
         const out = [];
         let from = 0;
         while (from <= haystack.length - needle.length) {
@@ -94,7 +103,7 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
             if (index < 0)
                 break;
             const end = index + needle.length;
-            if (!dom.findWordToggle.checked || isWholeWord(text, index, end)) {
+            if (!isOptionEnabled(dom.findWordToggle) || isWholeWord(text, index, end)) {
                 out.push({ start: index, end, text: text.slice(index, end) });
             }
             from = index + Math.max(needle.length, 1);
@@ -208,7 +217,7 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
         }
     }
     function getReplacementText(matchText) {
-        if (!dom.findRegexToggle.checked)
+        if (!isOptionEnabled(dom.findRegexToggle))
             return dom.replaceInput.value;
         const regex = getRegex(false);
         if (!regex)
@@ -299,14 +308,14 @@ export function createFindReplaceController(dom, editor, refocusEditor) {
     dom.findInput.addEventListener("input", () => {
         refreshMatches(true);
     });
-    dom.findCaseToggle.addEventListener("change", () => {
-        refreshMatches(true);
+    dom.findCaseToggle.addEventListener("click", () => {
+        toggleOption(dom.findCaseToggle);
     });
-    dom.findWordToggle.addEventListener("change", () => {
-        refreshMatches(true);
+    dom.findWordToggle.addEventListener("click", () => {
+        toggleOption(dom.findWordToggle);
     });
-    dom.findRegexToggle.addEventListener("change", () => {
-        refreshMatches(true);
+    dom.findRegexToggle.addEventListener("click", () => {
+        toggleOption(dom.findRegexToggle);
     });
     dom.findPrevBtn.addEventListener("click", () => {
         findNext(true);

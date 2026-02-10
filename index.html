@@ -287,18 +287,9 @@
               <button class="toolBtn" id="replaceAllBtn" type="button">Replace All</button>
             </div>
             <div class="findOpts">
-              <label class="findOpt toggle" for="findCaseToggle">
-                <input id="findCaseToggle" type="checkbox" />
-                <span>Match case</span>
-              </label>
-              <label class="findOpt toggle" for="findWordToggle">
-                <input id="findWordToggle" type="checkbox" />
-                <span>Whole word</span>
-              </label>
-              <label class="findOpt toggle" for="findRegexToggle">
-                <input id="findRegexToggle" type="checkbox" />
-                <span>Regex</span>
-              </label>
+              <button class="findOptBtn" id="findCaseToggle" type="button" aria-pressed="false">Match case</button>
+              <button class="findOptBtn" id="findWordToggle" type="button" aria-pressed="false">Whole word</button>
+              <button class="findOptBtn" id="findRegexToggle" type="button" aria-pressed="false">Regex</button>
               <span class="findStatus" id="findStatus" role="status" aria-live="polite"></span>
             </div>
           </div>
