@@ -12,5 +12,5 @@ export const DEFAULT_PREFS = {
     lineWrap: false,
     showExecTime: true,
     splitHorizontal: true,
-    theme: "light"
+    theme: "system"
 };
