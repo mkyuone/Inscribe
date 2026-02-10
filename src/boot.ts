@@ -10,6 +10,7 @@ import { createEditorController } from "./app/editor.js";
 import { createFileController } from "./app/files.js";
 import { createHistoryController } from "./app/history.js";
 import { createHistoryUiController } from "./app/history-ui.js";
+import { createFindReplaceController } from "./app/find-replace.js";
 import { setupConsoleInput } from "./app/input.js";
 import { createPrintController, PrintController } from "./app/print.js";
 import { createPyodideController, PyodideController } from "./app/pyodide.js";
@@ -179,6 +180,7 @@ export async function boot() {
   }, 15000);
 
   const refocusEditor = createRefocusEditor(dom, editorCtrl.editor);
+  createFindReplaceController(dom, editorCtrl.editor, refocusEditor);
 
   const fileCtrl = createFileController(
     dom,

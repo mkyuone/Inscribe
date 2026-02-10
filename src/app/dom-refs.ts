@@ -25,8 +25,24 @@ export type DomRefs = {
   aboutBtn: HTMLButtonElement;
   undoBtn: HTMLButtonElement;
   redoBtn: HTMLButtonElement;
+  findBtn: HTMLButtonElement;
   wrapBtn: HTMLButtonElement;
   editorPane: HTMLDivElement;
+  findBar: HTMLDivElement;
+  findInput: HTMLInputElement;
+  findCount: HTMLSpanElement;
+  findReplaceModeBtn: HTMLButtonElement;
+  findPrevBtn: HTMLButtonElement;
+  findNextBtn: HTMLButtonElement;
+  findCloseBtn: HTMLButtonElement;
+  replaceRow: HTMLDivElement;
+  replaceInput: HTMLInputElement;
+  replaceBtn: HTMLButtonElement;
+  replaceAllBtn: HTMLButtonElement;
+  findCaseToggle: HTMLInputElement;
+  findWordToggle: HTMLInputElement;
+  findRegexToggle: HTMLInputElement;
+  findStatus: HTMLSpanElement;
   splitPane: HTMLDivElement;
   resizer: HTMLDivElement;
   consoleEl: HTMLDivElement;
@@ -133,8 +149,24 @@ export function getDomRefs(): DomRefs {
     aboutBtn: byId<HTMLButtonElement>("aboutBtn"),
     undoBtn: byId<HTMLButtonElement>("undoBtn"),
     redoBtn: byId<HTMLButtonElement>("redoBtn"),
+    findBtn: byId<HTMLButtonElement>("findBtn"),
     wrapBtn: byId<HTMLButtonElement>("wrapBtn"),
     editorPane: byId<HTMLDivElement>("editorPane"),
+    findBar: byId<HTMLDivElement>("findBar"),
+    findInput: byId<HTMLInputElement>("findInput"),
+    findCount: byId<HTMLSpanElement>("findCount"),
+    findReplaceModeBtn: byId<HTMLButtonElement>("findReplaceModeBtn"),
+    findPrevBtn: byId<HTMLButtonElement>("findPrevBtn"),
+    findNextBtn: byId<HTMLButtonElement>("findNextBtn"),
+    findCloseBtn: byId<HTMLButtonElement>("findCloseBtn"),
+    replaceRow: byId<HTMLDivElement>("replaceRow"),
+    replaceInput: byId<HTMLInputElement>("replaceInput"),
+    replaceBtn: byId<HTMLButtonElement>("replaceBtn"),
+    replaceAllBtn: byId<HTMLButtonElement>("replaceAllBtn"),
+    findCaseToggle: byId<HTMLInputElement>("findCaseToggle"),
+    findWordToggle: byId<HTMLInputElement>("findWordToggle"),
+    findRegexToggle: byId<HTMLInputElement>("findRegexToggle"),
+    findStatus: byId<HTMLSpanElement>("findStatus"),
     splitPane: byId<HTMLDivElement>("splitPane"),
     resizer: byId<HTMLDivElement>("dragbar"),
     consoleEl: byId<HTMLDivElement>("console"),

@@ -566,6 +566,87 @@
     background:rgba(37,99,235,0.14);
     color:var(--accent);
   }
+  .findBar{
+    display:none;
+    flex-direction:column;
+    gap:8px;
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(to bottom, var(--panel2), rgba(255,255,255,0.82));
+  }
+  .findBar.active{
+    display:flex;
+  }
+  .findBar:not(.replaceMode) .replaceRow{
+    display:none;
+  }
+  .findRow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .findRow .material-icons{
+    font-size:16px;
+    color:rgba(15,23,42,0.58);
+  }
+  .findField{
+    flex:1 1 auto;
+    min-width:0;
+    height:30px;
+    border-radius:9px;
+    border:1px solid rgba(15,23,42,0.14);
+    background:rgba(255,255,255,0.86);
+    color:var(--text);
+    padding:0 10px;
+    font-family:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-size:13px;
+  }
+  .findField:focus{
+    outline:none;
+    border-color:rgba(37,99,235,0.45);
+    box-shadow:0 0 0 2px rgba(37,99,235,0.14);
+  }
+  .findCount{
+    min-width:56px;
+    text-align:center;
+    font-family:"IBM Plex Mono";
+    font-size:11.5px;
+    color:rgba(15,23,42,0.65);
+  }
+  .findModeBtn{
+    height:30px;
+    padding:0 10px;
+    font-size:12px;
+  }
+  .findIconBtn{
+    width:30px;
+    height:30px;
+    border-radius:9px;
+  }
+  .findOpts{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .findOpt{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:rgba(15,23,42,0.75);
+  }
+  .findOpt.toggle{
+    gap:8px;
+  }
+  .findStatus{
+    margin-left:auto;
+    font-size:12px;
+    color:rgba(15,23,42,0.58);
+  }
+  .findStatus.error{
+    color:var(--danger);
+  }
 
   .split:not(.horizontal) .editorPane{ height:58%; }
   .split.horizontal .editorPane{
@@ -618,6 +699,10 @@
     font-size:14px;
     line-height:1.56;
     background:#fff;
+  }
+  .cm-searching-active{
+    background:rgba(37,99,235,0.24);
+    outline:1px solid rgba(37,99,235,0.6);
   }
   .CodeMirror-gutters{
     background:#fbfbfe;
@@ -1730,6 +1815,30 @@
     background:rgba(96,165,250,0.22);
     color:rgba(226,232,240,0.92);
   }
+  html[data-theme="dark"] .findBar{
+    border-bottom:1px solid rgba(148,163,184,0.2);
+    background:linear-gradient(to bottom, var(--panel2), rgba(15,23,42,0.78));
+  }
+  html[data-theme="dark"] .findRow .material-icons{
+    color:rgba(226,232,240,0.62);
+  }
+  html[data-theme="dark"] .findField{
+    border-color:rgba(148,163,184,0.3);
+    background:rgba(15,23,42,0.82);
+    color:rgba(226,232,240,0.92);
+  }
+  html[data-theme="dark"] .findField:focus{
+    border-color:rgba(96,165,250,0.55);
+    box-shadow:0 0 0 2px rgba(96,165,250,0.2);
+  }
+  html[data-theme="dark"] .findCount,
+  html[data-theme="dark"] .findOpt,
+  html[data-theme="dark"] .findStatus{
+    color:rgba(226,232,240,0.7);
+  }
+  html[data-theme="dark"] .findStatus.error{
+    color:rgba(248,113,113,0.9);
+  }
   html[data-theme="dark"] .resizer::before{
     background:rgba(148,163,184,0.3);
   }
@@ -1747,6 +1856,10 @@
   }
   html[data-theme="dark"] .CodeMirror-linenumber{
     color:rgba(148,163,184,0.6);
+  }
+  html[data-theme="dark"] .cm-searching-active{
+    background:rgba(96,165,250,0.25);
+    outline:1px solid rgba(147,197,253,0.75);
   }
 
   html[data-theme="dark"] #console{

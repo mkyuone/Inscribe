@@ -256,9 +256,50 @@
               <button class="iconBtn" id="redoBtn" type="button" title="Redo (Cmd/Ctrl + Shift + Z)" aria-label="Redo">
                 <span class="material-icons" aria-hidden="true">redo</span>
               </button>
+              <button class="iconBtn" id="findBtn" type="button" title="Find / Replace (Cmd/Ctrl + F / Cmd/Ctrl + H)" aria-label="Find and replace">
+                <span class="material-icons" aria-hidden="true">search</span>
+              </button>
               <button class="iconBtn" id="wrapBtn" type="button" title="Toggle line wrap">
                 <span class="material-icons" aria-hidden="true">wrap_text</span>
               </button>
+            </div>
+          </div>
+          <div class="findBar" id="findBar" role="region" aria-label="Find and replace">
+            <div class="findRow">
+              <span class="material-icons" aria-hidden="true">search</span>
+              <input class="findField" id="findInput" type="text" placeholder="Find" autocomplete="off" spellcheck="false" />
+              <span class="findCount" id="findCount">0 / 0</span>
+              <button class="toolBtn findModeBtn" id="findReplaceModeBtn" type="button" aria-pressed="false">Replace</button>
+              <button class="iconBtn findIconBtn" id="findPrevBtn" type="button" title="Previous match (Shift + Enter)">
+                <span class="material-icons" aria-hidden="true">keyboard_arrow_up</span>
+              </button>
+              <button class="iconBtn findIconBtn" id="findNextBtn" type="button" title="Next match (Enter)">
+                <span class="material-icons" aria-hidden="true">keyboard_arrow_down</span>
+              </button>
+              <button class="iconBtn findIconBtn" id="findCloseBtn" type="button" title="Close find">
+                <span class="material-icons" aria-hidden="true">close</span>
+              </button>
+            </div>
+            <div class="findRow replaceRow" id="replaceRow">
+              <span class="material-icons" aria-hidden="true">swap_horiz</span>
+              <input class="findField" id="replaceInput" type="text" placeholder="Replace with" autocomplete="off" spellcheck="false" />
+              <button class="toolBtn" id="replaceBtn" type="button">Replace</button>
+              <button class="toolBtn" id="replaceAllBtn" type="button">Replace All</button>
+            </div>
+            <div class="findOpts">
+              <label class="findOpt toggle" for="findCaseToggle">
+                <input id="findCaseToggle" type="checkbox" />
+                <span>Match case</span>
+              </label>
+              <label class="findOpt toggle" for="findWordToggle">
+                <input id="findWordToggle" type="checkbox" />
+                <span>Whole word</span>
+              </label>
+              <label class="findOpt toggle" for="findRegexToggle">
+                <input id="findRegexToggle" type="checkbox" />
+                <span>Regex</span>
+              </label>
+              <span class="findStatus" id="findStatus" role="status" aria-live="polite"></span>
             </div>
           </div>
           <textarea id="editor">print("Hello, World!")</textarea>
