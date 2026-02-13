@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
-import { LS_KEYS } from "../constants.js";
-import { byId, debounce } from "../utils/dom.js";
-import { safeLS } from "../utils/storage.js";
+import { byId } from "../utils/dom.js";
 export function createEditorController(dom, prefs, onDirtyChange, onChange) {
     const editor = CodeMirror.fromTextArea(byId("editor"), {
         mode: "python",
@@ -15,13 +13,12 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
         screenReaderLabel: "Python code editor"
     });
     let lastSavedContent = editor.getValue();
-    const saveDraftDebounced = debounce(() => {
-        safeLS.set(LS_KEYS.DRAFT, editor.getValue());
-    }, 200);
+    let suppressChange = false;
     editor.on("change", () => {
+        if (suppressChange)
+            return;
         const curr = editor.getValue();
         onDirtyChange(curr !== lastSavedContent);
-        saveDraftDebounced();
         onChange === null || onChange === void 0 ? void 0 : onChange();
     });
     function getCurrentCellCode() {
@@ -57,11 +54,19 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
         lastSavedContent = editor.getValue();
         onDirtyChange(false);
     }
+    function loadDocument(value, savedValue = value) {
+        suppressChange = true;
+        editor.setValue(value);
+        suppressChange = false;
+        lastSavedContent = savedValue;
+        onDirtyChange(value !== savedValue);
+    }
     return {
         editor,
         getCodeForMode,
         getValue: () => editor.getValue(),
         setValue: (value) => editor.setValue(value),
+        loadDocument,
         markSaved,
         focus: () => editor.focus(),
         refresh: () => editor.refresh()

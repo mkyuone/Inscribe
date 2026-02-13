@@ -23,6 +23,9 @@ export type UiController = {
   openRunMenu: () => void;
   closeRunMenu: () => void;
   toggleRunMenu: () => void;
+  openEditorActions: () => void;
+  closeEditorActions: () => void;
+  toggleEditorActions: () => void;
   setHints: () => void;
   bindGlobalShortcuts: () => void;
   bindMenuDismiss: () => void;
@@ -38,7 +41,9 @@ export function createRefocusEditor(dom: DomRefs, editor: CodeMirrorEditor) {
       dom.shareBtn,
       dom.moreBtn,
       dom.runModeBtn,
-      dom.varsToggleBtn
+      dom.editorActionsBtn,
+      dom.varsToggleBtn,
+      dom.newTabBtn
     ].forEach((b) => b && b.blur());
     requestAnimationFrame(() => editor.focus());
   };
@@ -53,7 +58,11 @@ export function createUiController(
   onSaveFile: () => void,
   onOpenFile: () => void,
   onOpenPrintModal: () => void,
-  onOpenSettings: () => void
+  onOpenSettings: () => void,
+  onNewTab: () => void,
+  onRenameTab: () => void,
+  onNextTab: () => void,
+  onPreviousTab: () => void
 ): UiController {
   function openAbout() {
     dom.aboutOverlay.classList.add("active");
@@ -96,6 +105,7 @@ export function createUiController(
 
   function openMenu() {
     closeRunMenu();
+    closeEditorActions();
     dom.moreMenu.classList.add("active");
     dom.moreBtn.setAttribute("aria-expanded", "true");
   }
@@ -111,6 +121,7 @@ export function createUiController(
 
   function openRunMenu() {
     closeMenu();
+    closeEditorActions();
     dom.runMenu.classList.add("active");
     dom.runModeBtn.setAttribute("aria-expanded", "true");
   }
@@ -122,6 +133,22 @@ export function createUiController(
   function toggleRunMenu() {
     if (dom.runMenu.classList.contains("active")) closeRunMenu();
     else openRunMenu();
+  }
+
+  function openEditorActions() {
+    closeMenu();
+    closeRunMenu();
+    dom.editorActionsMenu.classList.add("active");
+    dom.editorActionsBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeEditorActions() {
+    dom.editorActionsMenu.classList.remove("active");
+    dom.editorActionsBtn.setAttribute("aria-expanded", "false");
+    dom.editorActionsBtn.blur();
+  }
+  function toggleEditorActions() {
+    if (dom.editorActionsMenu.classList.contains("active")) closeEditorActions();
+    else openEditorActions();
   }
 
   function setHints() {
@@ -140,6 +167,9 @@ export function createUiController(
       { keys: [mod, "Shift", enterKey], desc: "Run current cell (# %%)" },
       { keys: [mod, "S"], desc: "Save file" },
       { keys: [mod, "O"], desc: "Open file" },
+      { keys: [mod, "Alt", "N"], desc: "New tab" },
+      { keys: ["F2"], desc: "Rename current tab" },
+      { keys: [mod, "Alt", "← / →"], desc: "Previous / next tab" },
       { keys: [mod, "P"], desc: "Print / Export" },
       { keys: [mod, ","], desc: "Open Settings" },
       { keys: ["Esc"], desc: "Close modals / menus" }
@@ -167,11 +197,34 @@ export function createUiController(
           closeAnyModal();
           closeMenu();
           closeRunMenu();
+          closeEditorActions();
           refocusEditor();
           return;
         }
 
+        if (e.key === "F2") {
+          e.preventDefault();
+          onRenameTab();
+          return;
+        }
+
         if (!isModKey(e)) return;
+
+        if (e.altKey && e.key.toLowerCase() === "n") {
+          e.preventDefault();
+          onNewTab();
+          return;
+        }
+        if (e.altKey && e.key === "ArrowRight") {
+          e.preventDefault();
+          onNextTab();
+          return;
+        }
+        if (e.altKey && e.key === "ArrowLeft") {
+          e.preventDefault();
+          onPreviousTab();
+          return;
+        }
 
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -216,6 +269,10 @@ export function createUiController(
 
       const withinRun = dom.runMenu.contains(target) || dom.runModeBtn.contains(target);
       if (!withinRun) closeRunMenu();
+
+      const withinEditorActions =
+        dom.editorActionsMenu.contains(target) || dom.editorActionsBtn.contains(target);
+      if (!withinEditorActions) closeEditorActions();
     });
   }
 
@@ -297,6 +354,9 @@ export function createUiController(
     openRunMenu,
     closeRunMenu,
     toggleRunMenu,
+    openEditorActions,
+    closeEditorActions,
+    toggleEditorActions,
     setHints,
     bindGlobalShortcuts,
     bindMenuDismiss,

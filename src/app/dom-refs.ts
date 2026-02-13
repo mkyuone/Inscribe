@@ -27,6 +27,10 @@ export type DomRefs = {
   redoBtn: HTMLButtonElement;
   findBtn: HTMLButtonElement;
   wrapBtn: HTMLButtonElement;
+  editorActionsBtn: HTMLButtonElement;
+  editorActionsMenu: HTMLDivElement;
+  renameTabBtn: HTMLButtonElement;
+  closeTabBtn: HTMLButtonElement;
   editorPane: HTMLDivElement;
   findBar: HTMLDivElement;
   findInput: HTMLInputElement;
@@ -96,7 +100,8 @@ export type DomRefs = {
   sysToastTitle: HTMLDivElement;
   sysToastDesc: HTMLDivElement;
   sysToastIcon: HTMLSpanElement;
-  fileMeta: HTMLSpanElement;
+  tabStrip: HTMLDivElement;
+  newTabBtn: HTMLButtonElement;
   sbRun: HTMLSpanElement;
   sbDirty: HTMLSpanElement;
   sbPy: HTMLSpanElement;
@@ -151,6 +156,10 @@ export function getDomRefs(): DomRefs {
     redoBtn: byId<HTMLButtonElement>("redoBtn"),
     findBtn: byId<HTMLButtonElement>("findBtn"),
     wrapBtn: byId<HTMLButtonElement>("wrapBtn"),
+    editorActionsBtn: byId<HTMLButtonElement>("editorActionsBtn"),
+    editorActionsMenu: byId<HTMLDivElement>("editorActionsMenu"),
+    renameTabBtn: byId<HTMLButtonElement>("renameTabBtn"),
+    closeTabBtn: byId<HTMLButtonElement>("closeTabBtn"),
     editorPane: byId<HTMLDivElement>("editorPane"),
     findBar: byId<HTMLDivElement>("findBar"),
     findInput: byId<HTMLInputElement>("findInput"),
@@ -220,7 +229,8 @@ export function getDomRefs(): DomRefs {
     sysToastTitle: byId<HTMLDivElement>("sysToastTitle"),
     sysToastDesc: byId<HTMLDivElement>("sysToastDesc"),
     sysToastIcon: byId<HTMLSpanElement>("sysToastIcon"),
-    fileMeta: byId<HTMLSpanElement>("fileMeta"),
+    tabStrip: byId<HTMLDivElement>("tabStrip"),
+    newTabBtn: byId<HTMLButtonElement>("newTabBtn"),
     sbRun: byId<HTMLSpanElement>("sbRun"),
     sbDirty: byId<HTMLSpanElement>("sbDirty"),
     sbPy: byId<HTMLSpanElement>("sbPy"),

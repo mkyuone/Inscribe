@@ -10,7 +10,6 @@ export function updateStatusBar(state, dom) {
     setClass(dom.sbPy, state.pyodideReady ? "good" : "bad");
 }
 export function setFilenameStatus(name, dom) {
-    dom.fileMeta.textContent = name;
     dom.sbFile.textContent = name;
 }
 export function updateCursorStatus(editor, dom) {

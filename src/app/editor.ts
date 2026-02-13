@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 
-import { LS_KEYS } from "../constants.js";
-import { byId, debounce } from "../utils/dom.js";
-import { safeLS } from "../utils/storage.js";
+import { byId } from "../utils/dom.js";
 import { DomRefs } from "./dom-refs.js";
 import { Prefs, RunMode } from "./types.js";
 
@@ -12,6 +10,7 @@ export type EditorController = {
   getCodeForMode: (mode: RunMode) => string | null;
   getValue: () => string;
   setValue: (value: string) => void;
+  loadDocument: (value: string, savedValue?: string) => void;
   markSaved: () => void;
   focus: () => void;
   refresh: () => void;
@@ -35,15 +34,12 @@ export function createEditorController(
   });
 
   let lastSavedContent = editor.getValue();
-
-  const saveDraftDebounced = debounce(() => {
-    safeLS.set(LS_KEYS.DRAFT, editor.getValue());
-  }, 200);
+  let suppressChange = false;
 
   editor.on("change", () => {
+    if (suppressChange) return;
     const curr = editor.getValue();
     onDirtyChange(curr !== lastSavedContent);
-    saveDraftDebounced();
     onChange?.();
   });
 
@@ -86,11 +82,20 @@ export function createEditorController(
     onDirtyChange(false);
   }
 
+  function loadDocument(value: string, savedValue = value) {
+    suppressChange = true;
+    editor.setValue(value);
+    suppressChange = false;
+    lastSavedContent = savedValue;
+    onDirtyChange(value !== savedValue);
+  }
+
   return {
     editor,
     getCodeForMode,
     getValue: () => editor.getValue(),
     setValue: (value: string) => editor.setValue(value),
+    loadDocument,
     markSaved,
     focus: () => editor.focus(),
     refresh: () => editor.refresh()

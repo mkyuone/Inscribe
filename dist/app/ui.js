@@ -10,12 +10,14 @@ export function createRefocusEditor(dom, editor) {
             dom.shareBtn,
             dom.moreBtn,
             dom.runModeBtn,
-            dom.varsToggleBtn
+            dom.editorActionsBtn,
+            dom.varsToggleBtn,
+            dom.newTabBtn
         ].forEach((b) => b && b.blur());
         requestAnimationFrame(() => editor.focus());
     };
 }
-export function createUiController(dom, editor, refocusEditor, onRunDefault, onRunCell, onSaveFile, onOpenFile, onOpenPrintModal, onOpenSettings) {
+export function createUiController(dom, editor, refocusEditor, onRunDefault, onRunCell, onSaveFile, onOpenFile, onOpenPrintModal, onOpenSettings, onNewTab, onRenameTab, onNextTab, onPreviousTab) {
     function openAbout() {
         dom.aboutOverlay.classList.add("active");
     }
@@ -55,6 +57,7 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     }
     function openMenu() {
         closeRunMenu();
+        closeEditorActions();
         dom.moreMenu.classList.add("active");
         dom.moreBtn.setAttribute("aria-expanded", "true");
     }
@@ -71,6 +74,7 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     }
     function openRunMenu() {
         closeMenu();
+        closeEditorActions();
         dom.runMenu.classList.add("active");
         dom.runModeBtn.setAttribute("aria-expanded", "true");
     }
@@ -84,6 +88,23 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             closeRunMenu();
         else
             openRunMenu();
+    }
+    function openEditorActions() {
+        closeMenu();
+        closeRunMenu();
+        dom.editorActionsMenu.classList.add("active");
+        dom.editorActionsBtn.setAttribute("aria-expanded", "true");
+    }
+    function closeEditorActions() {
+        dom.editorActionsMenu.classList.remove("active");
+        dom.editorActionsBtn.setAttribute("aria-expanded", "false");
+        dom.editorActionsBtn.blur();
+    }
+    function toggleEditorActions() {
+        if (dom.editorActionsMenu.classList.contains("active"))
+            closeEditorActions();
+        else
+            openEditorActions();
     }
     function setHints() {
         const mac = isMac();
@@ -99,6 +120,9 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             { keys: [mod, "Shift", enterKey], desc: "Run current cell (# %%)" },
             { keys: [mod, "S"], desc: "Save file" },
             { keys: [mod, "O"], desc: "Open file" },
+            { keys: [mod, "Alt", "N"], desc: "New tab" },
+            { keys: ["F2"], desc: "Rename current tab" },
+            { keys: [mod, "Alt", "← / →"], desc: "Previous / next tab" },
             { keys: [mod, "P"], desc: "Print / Export" },
             { keys: [mod, ","], desc: "Open Settings" },
             { keys: ["Esc"], desc: "Close modals / menus" }
@@ -119,11 +143,32 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
                 closeAnyModal();
                 closeMenu();
                 closeRunMenu();
+                closeEditorActions();
                 refocusEditor();
+                return;
+            }
+            if (e.key === "F2") {
+                e.preventDefault();
+                onRenameTab();
                 return;
             }
             if (!isModKey(e))
                 return;
+            if (e.altKey && e.key.toLowerCase() === "n") {
+                e.preventDefault();
+                onNewTab();
+                return;
+            }
+            if (e.altKey && e.key === "ArrowRight") {
+                e.preventDefault();
+                onNextTab();
+                return;
+            }
+            if (e.altKey && e.key === "ArrowLeft") {
+                e.preventDefault();
+                onPreviousTab();
+                return;
+            }
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 onRunDefault();
@@ -165,6 +210,9 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             const withinRun = dom.runMenu.contains(target) || dom.runModeBtn.contains(target);
             if (!withinRun)
                 closeRunMenu();
+            const withinEditorActions = dom.editorActionsMenu.contains(target) || dom.editorActionsBtn.contains(target);
+            if (!withinEditorActions)
+                closeEditorActions();
         });
     }
     function bindModalDismiss() {
@@ -246,6 +294,9 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         openRunMenu,
         closeRunMenu,
         toggleRunMenu,
+        openEditorActions,
+        closeEditorActions,
+        toggleEditorActions,
         setHints,
         bindGlobalShortcuts,
         bindMenuDismiss,

@@ -248,21 +248,48 @@
           <div class="paneHeader">
             <div class="paneLeft">
               <div class="paneTitle"><span class="dot"></span>Editor</div>
-              <div class="paneMeta" id="fileMeta">untitled.py</div>
+              <div class="tabBar">
+                <div class="tabStrip" id="tabStrip" role="tablist" aria-label="Open files">
+                  <button class="iconBtn tabAddBtn" id="newTabBtn" type="button" title="New file tab" aria-label="New file tab">
+                    <span class="material-icons" aria-hidden="true">add</span>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="paneActions">
-              <button class="iconBtn" id="undoBtn" type="button" title="Undo (Cmd/Ctrl + Z)" aria-label="Undo">
-                <span class="material-icons" aria-hidden="true">undo</span>
-              </button>
-              <button class="iconBtn" id="redoBtn" type="button" title="Redo (Cmd/Ctrl + Shift + Z)" aria-label="Redo">
-                <span class="material-icons" aria-hidden="true">redo</span>
-              </button>
               <button class="iconBtn" id="findBtn" type="button" title="Find / Replace (Cmd/Ctrl + F / Cmd/Ctrl + H)" aria-label="Find and replace">
                 <span class="material-icons" aria-hidden="true">search</span>
               </button>
-              <button class="iconBtn" id="wrapBtn" type="button" title="Toggle line wrap">
-                <span class="material-icons" aria-hidden="true">wrap_text</span>
-              </button>
+              <div class="menuWrap">
+                <button class="iconBtn" id="editorActionsBtn" type="button" title="Editor actions" aria-haspopup="menu" aria-expanded="false" aria-label="Editor actions">
+                  <span class="material-icons" aria-hidden="true">more_horiz</span>
+                </button>
+                <div class="menu" id="editorActionsMenu" role="menu" aria-label="Editor actions">
+                  <button class="menuItem" id="renameTabBtn" type="button" role="menuitem">
+                    <span class="material-icons" aria-hidden="true">drive_file_rename_outline</span>
+                    <span class="miLabel">Rename file</span>
+                    <span class="miHint">F2</span>
+                  </button>
+                  <button class="menuItem" id="closeTabBtn" type="button" role="menuitem">
+                    <span class="material-icons" aria-hidden="true">close</span>
+                    <span class="miLabel">Close file</span>
+                  </button>
+                  <button class="menuItem" id="undoBtn" type="button" role="menuitem">
+                    <span class="material-icons" aria-hidden="true">undo</span>
+                    <span class="miLabel">Undo</span>
+                    <span class="miHint">Ctrl/⌘ Z</span>
+                  </button>
+                  <button class="menuItem" id="redoBtn" type="button" role="menuitem">
+                    <span class="material-icons" aria-hidden="true">redo</span>
+                    <span class="miLabel">Redo</span>
+                    <span class="miHint">Ctrl/⌘ Shift Z</span>
+                  </button>
+                  <button class="menuItem" id="wrapBtn" type="button" role="menuitem">
+                    <span class="material-icons" aria-hidden="true">wrap_text</span>
+                    <span class="miLabel">Toggle line wrap</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="findBar" id="findBar" role="region" aria-label="Find and replace">

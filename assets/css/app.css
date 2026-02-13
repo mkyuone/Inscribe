@@ -389,6 +389,9 @@
   #runMenu{
     min-width:270px;
   }
+  #editorActionsMenu{
+    min-width:230px;
+  }
 
   #runMenu .menuItem{
     display:grid;
@@ -488,6 +491,7 @@
     align-items:center;
     gap:10px;
     min-width:0;
+    flex:1 1 auto;
   }
 
   .paneTitle{
@@ -514,6 +518,130 @@
     overflow:hidden;
     text-overflow:ellipsis;
     max-width:52vw;
+  }
+
+  .tabBar{
+    min-width:0;
+    flex:1 1 auto;
+  }
+  .tabStrip{
+    min-width:0;
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding-bottom:2px;
+    scrollbar-width:thin;
+  }
+  .tabItem{
+    flex:0 0 auto;
+    min-width:0;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    border:1px solid rgba(15,23,42,0.14);
+    background:rgba(15,23,42,0.05);
+    border-radius:10px;
+    padding:0 2px 0 4px;
+    transition:background var(--tFast) var(--ease), border-color var(--tFast) var(--ease);
+  }
+  .tabItem.active{
+    border-color:rgba(37,99,235,0.34);
+    background:rgba(37,99,235,0.12);
+  }
+  .tabItem.renaming{
+    border-color:rgba(37,99,235,0.4);
+    background:rgba(37,99,235,0.12);
+  }
+  .tabSelect{
+    min-width:0;
+    max-width:220px;
+    height:28px;
+    border:none;
+    background:transparent;
+    color:rgba(15,23,42,0.86);
+    font-family:"IBM Plex Mono";
+    font-size:12px;
+    padding:0 6px;
+    border-radius:8px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .tabItem.active .tabSelect{
+    color:var(--accent);
+  }
+  .tabName{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tabDirtyDot{
+    width:7px;
+    height:7px;
+    border-radius:999px;
+    background:rgba(245,158,11,0.85);
+    flex:none;
+  }
+  .tabDirtyDot.hidden{
+    display:none;
+  }
+  .tabRenameInput{
+    width:180px;
+    max-width:220px;
+    height:28px;
+    border:1px solid rgba(37,99,235,0.35);
+    border-radius:8px;
+    background:rgba(255,255,255,0.92);
+    color:rgba(15,23,42,0.9);
+    font-family:"IBM Plex Mono";
+    font-size:12px;
+    padding:0 8px;
+  }
+  .tabRenameInput:focus{
+    outline:none;
+    box-shadow:0 0 0 2px rgba(37,99,235,0.18);
+  }
+  .tabClose{
+    width:24px;
+    height:24px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:rgba(15,23,42,0.58);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background var(--tFast) var(--ease), color var(--tFast) var(--ease);
+  }
+  .tabClose:hover{
+    background:rgba(15,23,42,0.12);
+    color:rgba(15,23,42,0.86);
+  }
+  .tabClose .material-icons{
+    font-size:15px;
+    line-height:1;
+  }
+  .tabAddBtn{
+    width:28px !important;
+    height:28px !important;
+    border-radius:9px;
+    flex:none;
+    border:1px solid rgba(15,23,42,0.14);
+    background:rgba(15,23,42,0.04);
+    color:rgba(15,23,42,0.72);
+  }
+  .tabAddBtn:hover{
+    background:rgba(15,23,42,0.12);
+    color:rgba(15,23,42,0.9);
+  }
+  .tabAddBtn .material-icons{
+    font-size:17px;
   }
 
   .paneActions{
@@ -1711,12 +1839,24 @@
     .brandText .sub{ display:none; }
     .paneMeta{ max-width:62vw; }
     .sbMono{ max-width:52vw; }
+    .tabSelect{
+      max-width:160px;
+    }
   }
   @media (max-width:760px){
     .prefs{
       grid-template-columns:1fr;
     }
     .prefSectionTitle{ margin-top:8px; }
+    .paneTitle{
+      display:none;
+    }
+    .paneLeft{
+      gap:0;
+    }
+    .tabSelect{
+      max-width:120px;
+    }
   }
 
   /* Dark mode */
@@ -1841,6 +1981,48 @@
     border-color:rgba(96,165,250,0.35);
     background:rgba(96,165,250,0.22);
     color:rgba(226,232,240,0.92);
+  }
+  html[data-theme="dark"] .tabItem{
+    border-color:rgba(148,163,184,0.3);
+    background:rgba(148,163,184,0.14);
+  }
+  html[data-theme="dark"] .tabItem.active{
+    border-color:rgba(96,165,250,0.52);
+    background:rgba(96,165,250,0.26);
+  }
+  html[data-theme="dark"] .tabItem.renaming{
+    border-color:rgba(96,165,250,0.56);
+    background:rgba(96,165,250,0.26);
+  }
+  html[data-theme="dark"] .tabSelect{
+    color:rgba(226,232,240,0.9);
+  }
+  html[data-theme="dark"] .tabItem.active .tabSelect{
+    color:rgba(191,219,254,0.98);
+  }
+  html[data-theme="dark"] .tabClose{
+    color:rgba(226,232,240,0.66);
+  }
+  html[data-theme="dark"] .tabClose:hover{
+    background:rgba(148,163,184,0.24);
+    color:rgba(226,232,240,0.92);
+  }
+  html[data-theme="dark"] .tabAddBtn{
+    border-color:rgba(148,163,184,0.3);
+    background:rgba(148,163,184,0.12);
+    color:rgba(226,232,240,0.78);
+  }
+  html[data-theme="dark"] .tabAddBtn:hover{
+    background:rgba(148,163,184,0.24);
+    color:rgba(226,232,240,0.94);
+  }
+  html[data-theme="dark"] .tabRenameInput{
+    border-color:rgba(96,165,250,0.5);
+    background:rgba(15,23,42,0.86);
+    color:rgba(226,232,240,0.94);
+  }
+  html[data-theme="dark"] .tabRenameInput:focus{
+    box-shadow:0 0 0 2px rgba(96,165,250,0.28);
   }
   html[data-theme="dark"] .findBar{
     border-bottom:1px solid rgba(148,163,184,0.2);

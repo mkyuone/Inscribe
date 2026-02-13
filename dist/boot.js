@@ -19,6 +19,7 @@ import { loadPrefs, applyPrefs, savePrefs, bindPrefsUI, resetPrefs } from "./app
 import { createShareController } from "./app/share.js";
 import { createInitialState } from "./app/state.js";
 import { setFilenameStatus, updateCursorStatus, updateStatusBar } from "./app/status.js";
+import { createTabsController } from "./app/tabs.js";
 import { getRunModeLabel, setRunMode, updateRunModeUI } from "./app/run-mode.js";
 import { createRefocusEditor, createUiController } from "./app/ui.js";
 import { APP_VERSION, BUILD_TIME, COMMIT_HASH } from "./version.js";
@@ -141,10 +142,20 @@ export async function boot() {
     let lastHistoryCode = "";
     let lastHistoryTs = 0;
     let recordAutoSnapshot = () => { };
+    let tabsCtrl = null;
+    const legacyFilename = safeLS.get(LS_KEYS.FILENAME) || "untitled.py";
+    const legacyDraft = safeLS.get(LS_KEYS.DRAFT);
+    const hasStoredTabs = !!safeLS.get(LS_KEYS.TABS);
     const editorCtrl = createEditorController(dom, prefs, (isDirty) => {
-        state.isDirty = !!isDirty;
+        if (tabsCtrl) {
+            tabsCtrl.setActiveDirty(!!isDirty);
+        }
+        state.isDirty = tabsCtrl ? tabsCtrl.hasDirtyTabs() : !!isDirty;
         updateStatusBar(state, dom);
     }, () => {
+        if (tabsCtrl) {
+            tabsCtrl.updateActiveContent(editorCtrl.getValue());
+        }
         if (dom.printOverlay.classList.contains("active"))
             updatePrintConfirmState();
         recordAutoSnapshot();
@@ -164,12 +175,38 @@ export async function boot() {
     }, 15000);
     const refocusEditor = createRefocusEditor(dom, editorCtrl.editor);
     createFindReplaceController(dom, editorCtrl.editor, refocusEditor);
-    const fileCtrl = createFileController(dom, editorCtrl.editor, (name) => {
-        setFilenameStatus(name, dom);
-        safeLS.set(LS_KEYS.FILENAME, name);
-    }, () => {
-        editorCtrl.markSaved();
-    }, consoleApi.addLine, refocusEditor);
+    tabsCtrl = createTabsController({
+        dom,
+        initialContent: editorCtrl.getValue(),
+        legacyFilename,
+        legacyDraft,
+        setEditorDocument: (content, savedContent) => {
+            editorCtrl.loadDocument(content, savedContent);
+        },
+        refocusEditor,
+        onActiveFilenameChange: (name) => {
+            setFilenameStatus(name, dom);
+        },
+        onAnyDirtyChange: (dirty) => {
+            state.isDirty = dirty;
+            updateStatusBar(state, dom);
+        },
+        onConsoleLine: consoleApi.addLine
+    });
+    const fileCtrl = createFileController(dom, {
+        onOpenFileText: (filename, content) => {
+            tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.openFileAsTab(filename, content);
+        },
+        getActiveFilename: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveFilename()) || "untitled.py",
+        getActiveContent: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveContent()) || editorCtrl.getValue(),
+        onSaved: (name) => {
+            tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.markActiveSaved();
+            setFilenameStatus(name, dom);
+            editorCtrl.markSaved();
+        },
+        onConsoleLine: consoleApi.addLine,
+        refocusEditor
+    });
     const saveWithHistory = () => {
         const code = editorCtrl.getValue();
         if (code.trim()) {
@@ -210,7 +247,22 @@ export async function boot() {
     };
     const openPrintModal = () => printCtrl.openPrintModal();
     const openSettings = () => ui.openSettings();
-    ui = createUiController(dom, editorCtrl.editor, refocusEditor, runDefault, runCell, saveWithHistory, () => fileCtrl.openFile(), openPrintModal, openSettings);
+    const createNewTab = () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.createNewTab();
+    };
+    const renameActiveTab = () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.renameActiveTab();
+    };
+    const closeActiveTab = () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.closeActiveTab();
+    };
+    const activateNextTab = () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.activateNextTab();
+    };
+    const activatePreviousTab = () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.activatePreviousTab();
+    };
+    ui = createUiController(dom, editorCtrl.editor, refocusEditor, runDefault, runCell, saveWithHistory, () => fileCtrl.openFile(), openPrintModal, openSettings, createNewTab, renameActiveTab, activateNextTab, activatePreviousTab);
     printCtrl = createPrintController(dom, () => editorCtrl.getValue(), consoleApi.collectOutput, ui.closeMenu, ui.openPrint, ui.closePrint);
     updatePrintConfirmState = printCtrl.updatePrintConfirmState;
     const confirmAsyncioRun = () => new Promise((resolve) => {
@@ -251,27 +303,21 @@ export async function boot() {
         });
     });
     const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor);
-    fileCtrl.setFilename(safeLS.get(LS_KEYS.FILENAME) || "untitled.py");
     dom.aboutVersion.textContent = `v${APP_VERSION}`;
     dom.aboutBuildTime.textContent = BUILD_TIME;
     dom.aboutCommitHash.textContent = COMMIT_HASH;
     const shared = await shareCtrl.readSharedCodeFromUrl();
-    const draft = safeLS.get(LS_KEYS.DRAFT);
     if (shared && shared.code.trim().length) {
-        editorCtrl.setValue(shared.code);
-        fileCtrl.setFilename("shared.py");
-        editorCtrl.markSaved();
-        safeLS.set(LS_KEYS.DRAFT, editorCtrl.getValue());
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.replaceActiveTab("shared.py", shared.code, {
+            announce: "Loaded shared code from link."
+        });
         lastHistoryCode = shared.code;
         lastHistoryTs = Date.now();
         void historyCtrl.addEdit({ ts: lastHistoryTs, kind: "shared", code: shared.code });
-        consoleApi.addLine("Loaded shared code from link.", { dim: true, system: true });
         shareCtrl.showToast("Shared code loaded", "This editor opened code from a share link.");
     }
-    else if (draft && draft.trim().length) {
-        editorCtrl.setValue(draft);
-        editorCtrl.markSaved();
-        lastHistoryCode = draft;
+    else if (!hasStoredTabs && legacyDraft && legacyDraft.trim().length) {
+        lastHistoryCode = legacyDraft;
         lastHistoryTs = Date.now();
         consoleApi.addLine("Restored previous draft.", { dim: true, system: true });
     }
@@ -287,6 +333,7 @@ export async function boot() {
     }
     dom.runBtn.addEventListener("click", runDefault);
     dom.runModeBtn.addEventListener("click", ui.toggleRunMenu);
+    dom.editorActionsBtn.addEventListener("click", ui.toggleEditorActions);
     dom.runAllBtn.addEventListener("click", () => {
         setRunMode("all", dom, (next) => {
             state.runMode = next;
@@ -343,14 +390,28 @@ export async function boot() {
         refocusEditor();
     });
     dom.undoBtn.addEventListener("click", () => {
+        ui.closeEditorActions();
         editorCtrl.editor.undo();
         refocusEditor();
     });
     dom.redoBtn.addEventListener("click", () => {
+        ui.closeEditorActions();
         editorCtrl.editor.redo();
         refocusEditor();
     });
-    dom.wrapBtn.addEventListener("click", toggleWrap);
+    dom.renameTabBtn.addEventListener("click", () => {
+        ui.closeEditorActions();
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.renameActiveTab();
+    });
+    dom.closeTabBtn.addEventListener("click", () => {
+        ui.closeEditorActions();
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.closeActiveTab();
+        refocusEditor();
+    });
+    dom.wrapBtn.addEventListener("click", () => {
+        ui.closeEditorActions();
+        toggleWrap();
+    });
     dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
     dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);
     dom.varsToggleBtn.addEventListener("click", () => {

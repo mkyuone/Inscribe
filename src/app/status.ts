@@ -23,7 +23,6 @@ export function updateStatusBar(state: AppState, dom: DomRefs) {
 }
 
 export function setFilenameStatus(name: string, dom: DomRefs) {
-  dom.fileMeta.textContent = name;
   dom.sbFile.textContent = name;
 }
 

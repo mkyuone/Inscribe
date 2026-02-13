@@ -3,27 +3,28 @@
 
 import { DomRefs } from "./dom-refs.js";
 
+type ConsoleLineFn = (text: string, opts?: { dim?: boolean; system?: boolean }) => void;
+
 export type FileController = {
   openFile: () => void;
   saveFile: () => void;
-  setFilename: (name: string) => void;
-  getFilename: () => string;
+};
+
+type CreateFileControllerOptions = {
+  onOpenFileText: (filename: string, content: string) => void;
+  getActiveFilename: () => string;
+  getActiveContent: () => string;
+  onSaved: (filename: string) => void;
+  onConsoleLine: ConsoleLineFn;
+  refocusEditor: () => void;
 };
 
 export function createFileController(
   dom: DomRefs,
-  editor: CodeMirrorEditor,
-  onFilenameChange: (name: string) => void,
-  onSaved: () => void,
-  onConsoleLine: (text: string, opts?: { dim?: boolean; system?: boolean }) => void,
-  refocusEditor: () => void
+  opts: CreateFileControllerOptions
 ): FileController {
-  let currentFilename = "untitled.py";
-
-  function setFilename(name: string) {
-    currentFilename = name || "untitled.py";
-    onFilenameChange(currentFilename);
-  }
+  const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onConsoleLine, refocusEditor } =
+    opts;
 
   function openFile() {
     dom.openBtn.blur();
@@ -40,9 +41,7 @@ export function createFileController(
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      editor.setValue(String((ev.target as FileReader).result ?? ""));
-      setFilename(file.name);
-      onSaved();
+      onOpenFileText(file.name, String((ev.target as FileReader).result ?? ""));
       onConsoleLine(`Loaded: ${file.name}`, { dim: true, system: true });
       refocusEditor();
     };
@@ -52,19 +51,20 @@ export function createFileController(
   function saveFile() {
     dom.saveBtn.blur();
 
-    const code = editor.getValue();
+    const filename = getActiveFilename() || "script.py";
+    const code = getActiveContent();
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = currentFilename || "script.py";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    onSaved();
+    onSaved(filename);
     onConsoleLine(`Saved: ${a.download}`, { dim: true, system: true });
 
     refocusEditor();
@@ -72,8 +72,6 @@ export function createFileController(
 
   return {
     openFile,
-    saveFile,
-    setFilename,
-    getFilename: () => currentFilename
+    saveFile
   };
 }

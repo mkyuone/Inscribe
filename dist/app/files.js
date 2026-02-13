@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
-export function createFileController(dom, editor, onFilenameChange, onSaved, onConsoleLine, refocusEditor) {
-    let currentFilename = "untitled.py";
-    function setFilename(name) {
-        currentFilename = name || "untitled.py";
-        onFilenameChange(currentFilename);
-    }
+export function createFileController(dom, opts) {
+    const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onConsoleLine, refocusEditor } = opts;
     function openFile() {
         dom.openBtn.blur();
         dom.fileInput.value = "";
@@ -22,9 +18,7 @@ export function createFileController(dom, editor, onFilenameChange, onSaved, onC
         const reader = new FileReader();
         reader.onload = (ev) => {
             var _a;
-            editor.setValue(String((_a = ev.target.result) !== null && _a !== void 0 ? _a : ""));
-            setFilename(file.name);
-            onSaved();
+            onOpenFileText(file.name, String((_a = ev.target.result) !== null && _a !== void 0 ? _a : ""));
             onConsoleLine(`Loaded: ${file.name}`, { dim: true, system: true });
             refocusEditor();
         };
@@ -32,24 +26,23 @@ export function createFileController(dom, editor, onFilenameChange, onSaved, onC
     });
     function saveFile() {
         dom.saveBtn.blur();
-        const code = editor.getValue();
+        const filename = getActiveFilename() || "script.py";
+        const code = getActiveContent();
         const blob = new Blob([code], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = currentFilename || "script.py";
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        onSaved();
+        onSaved(filename);
         onConsoleLine(`Saved: ${a.download}`, { dim: true, system: true });
         refocusEditor();
     }
     return {
         openFile,
-        saveFile,
-        setFilename,
-        getFilename: () => currentFilename
+        saveFile
     };
 }
