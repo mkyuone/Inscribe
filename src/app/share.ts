@@ -192,19 +192,16 @@ export function createShareController(
     }
 
     try {
-      const { url, usedCompression } = await buildShareUrl(code);
+      const { url } = await buildShareUrl(code);
       const warnThreshold = 1600;
       if (url.length > warnThreshold) {
         const proceed = await confirmLongUrl(url.length);
         if (!proceed) {
-          addConsoleLine("Share cancelled due to long URL.", { dim: true, system: true });
           showToast("Share cancelled", "Use Save to download a .py file.");
           return;
         }
       }
       await copyToClipboard(url);
-      const note = usedCompression ? "Compressed and copied to clipboard." : "Copied to clipboard.";
-      addConsoleLine(`Share link created. ${note}`, { dim: true, system: true });
       showToast("Share link copied", "Anyone with the link can see it.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

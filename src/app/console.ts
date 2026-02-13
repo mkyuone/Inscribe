@@ -4,6 +4,22 @@
 import { escapeHtml } from "../utils/dom.js";
 import { DomRefs } from "./dom-refs.js";
 
+type SystemToastAction = {
+  label: string;
+  icon?: string;
+  onClick: () => void;
+};
+type SystemToastOptions = {
+  action?: SystemToastAction;
+  durationMs?: number;
+};
+type SystemToastWithOptionsFn = (
+  title: string,
+  desc: string,
+  icon?: string,
+  options?: SystemToastOptions
+) => void;
+
 export type ConsoleController = {
   addLine: (
     text: string,
@@ -21,7 +37,10 @@ export type ConsoleController = {
   attachStdoutHandlers: () => void;
 };
 
-export function createConsoleController(dom: DomRefs): ConsoleController {
+export function createConsoleController(
+  dom: DomRefs,
+  onSystemToast?: SystemToastWithOptionsFn
+): ConsoleController {
   let consoleBackup: string | null = null;
   let undoTimer: ReturnType<typeof setTimeout> | null = null;
   let stdoutBuffer = "";
@@ -88,12 +107,22 @@ export function createConsoleController(dom: DomRefs): ConsoleController {
     consoleBackup = dom.consoleEl.innerHTML;
 
     dom.consoleEl.innerHTML = "";
-    addLine("Console cleared. Undo available for 3 seconds.", { dim: true, system: true });
-
-    dom.undoClearBtn.style.display = "inline-flex";
+    if (onSystemToast) {
+      onSystemToast("Console cleared", "Output removed.", "delete_outline", {
+        action: {
+          label: "Undo",
+          icon: "redo",
+          onClick: () => {
+            undoClear();
+          }
+        },
+        durationMs: 3200
+      });
+    } else {
+      addLine("Console cleared. Undo available for 3 seconds.", { dim: true, system: true });
+    }
     undoTimer = setTimeout(() => {
       consoleBackup = null;
-      dom.undoClearBtn.style.display = "none";
     }, 3000);
   }
 
@@ -103,7 +132,7 @@ export function createConsoleController(dom: DomRefs): ConsoleController {
 
     dom.consoleEl.innerHTML = consoleBackup;
     consoleBackup = null;
-    dom.undoClearBtn.style.display = "none";
+    onSystemToast?.("Console restored", "Previous output has been restored.", "undo");
   }
 
   function collectOutput() {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 export function createFileController(dom, opts) {
-    const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onConsoleLine, refocusEditor } = opts;
+    const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onNotify, refocusEditor } = opts;
     function openFile() {
         dom.openBtn.blur();
         dom.fileInput.value = "";
@@ -11,7 +11,7 @@ export function createFileController(dom, opts) {
         var _a;
         const file = (_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0];
         if (!file) {
-            onConsoleLine("Open cancelled.", { dim: true, system: true });
+            onNotify("Open cancelled", "No file selected.", "info");
             refocusEditor();
             return;
         }
@@ -19,7 +19,7 @@ export function createFileController(dom, opts) {
         reader.onload = (ev) => {
             var _a;
             onOpenFileText(file.name, String((_a = ev.target.result) !== null && _a !== void 0 ? _a : ""));
-            onConsoleLine(`Loaded: ${file.name}`, { dim: true, system: true });
+            onNotify("File opened", file.name, "folder_open");
             refocusEditor();
         };
         reader.readAsText(file);
@@ -38,7 +38,7 @@ export function createFileController(dom, opts) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         onSaved(filename);
-        onConsoleLine(`Saved: ${a.download}`, { dim: true, system: true });
+        onNotify("File saved", a.download, "save");
         refocusEditor();
     }
     return {

@@ -51,7 +51,6 @@ export type DomRefs = {
   resizer: HTMLDivElement;
   consoleEl: HTMLDivElement;
   clearConsoleBtn: HTMLButtonElement;
-  undoClearBtn: HTMLButtonElement;
   varsToggleBtn: HTMLButtonElement;
   varsPane: HTMLDivElement;
   varsList: HTMLDivElement;
@@ -100,6 +99,8 @@ export type DomRefs = {
   sysToastTitle: HTMLDivElement;
   sysToastDesc: HTMLDivElement;
   sysToastIcon: HTMLSpanElement;
+  sysToastActions: HTMLDivElement;
+  sysToastActionBtn: HTMLButtonElement;
   tabStrip: HTMLDivElement;
   newTabBtn: HTMLButtonElement;
   sbRun: HTMLSpanElement;
@@ -180,7 +181,6 @@ export function getDomRefs(): DomRefs {
     resizer: byId<HTMLDivElement>("dragbar"),
     consoleEl: byId<HTMLDivElement>("console"),
     clearConsoleBtn: byId<HTMLButtonElement>("clearConsoleBtn"),
-    undoClearBtn: byId<HTMLButtonElement>("undoClearBtn"),
     varsToggleBtn: byId<HTMLButtonElement>("varsToggleBtn"),
     varsPane: byId<HTMLDivElement>("varsPane"),
     varsList: byId<HTMLDivElement>("varsList"),
@@ -229,6 +229,8 @@ export function getDomRefs(): DomRefs {
     sysToastTitle: byId<HTMLDivElement>("sysToastTitle"),
     sysToastDesc: byId<HTMLDivElement>("sysToastDesc"),
     sysToastIcon: byId<HTMLSpanElement>("sysToastIcon"),
+    sysToastActions: byId<HTMLDivElement>("sysToastActions"),
+    sysToastActionBtn: byId<HTMLButtonElement>("sysToastActionBtn"),
     tabStrip: byId<HTMLDivElement>("tabStrip"),
     newTabBtn: byId<HTMLButtonElement>("newTabBtn"),
     sbRun: byId<HTMLSpanElement>("sbRun"),

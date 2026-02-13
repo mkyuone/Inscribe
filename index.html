@@ -338,9 +338,6 @@
               <button class="iconBtn danger" id="clearConsoleBtn" type="button" title="Clear console (Undo for 3s)">
                 <span class="material-icons" aria-hidden="true">delete</span>
               </button>
-              <button class="iconBtn undo" id="undoClearBtn" type="button" title="Undo clear" style="display:none;">
-                <span class="material-icons" aria-hidden="true">undo</span>
-              </button>
             </div>
           </div>
           <div class="consoleBody">
@@ -387,6 +384,9 @@
     <div class="toastText">
       <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
       <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
+      <div class="toastActions" id="sysToastActions" hidden>
+        <button class="toastAction" id="sysToastActionBtn" type="button" hidden>Undo</button>
+      </div>
     </div>
   </div>
 

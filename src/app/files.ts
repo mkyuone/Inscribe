@@ -3,7 +3,7 @@
 
 import { DomRefs } from "./dom-refs.js";
 
-type ConsoleLineFn = (text: string, opts?: { dim?: boolean; system?: boolean }) => void;
+type NotifyFn = (title: string, desc: string, icon?: string) => void;
 
 export type FileController = {
   openFile: () => void;
@@ -15,7 +15,7 @@ type CreateFileControllerOptions = {
   getActiveFilename: () => string;
   getActiveContent: () => string;
   onSaved: (filename: string) => void;
-  onConsoleLine: ConsoleLineFn;
+  onNotify: NotifyFn;
   refocusEditor: () => void;
 };
 
@@ -23,7 +23,7 @@ export function createFileController(
   dom: DomRefs,
   opts: CreateFileControllerOptions
 ): FileController {
-  const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onConsoleLine, refocusEditor } =
+  const { onOpenFileText, getActiveFilename, getActiveContent, onSaved, onNotify, refocusEditor } =
     opts;
 
   function openFile() {
@@ -35,14 +35,14 @@ export function createFileController(
   dom.fileInput.addEventListener("change", (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) {
-      onConsoleLine("Open cancelled.", { dim: true, system: true });
+      onNotify("Open cancelled", "No file selected.", "info");
       refocusEditor();
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
       onOpenFileText(file.name, String((ev.target as FileReader).result ?? ""));
-      onConsoleLine(`Loaded: ${file.name}`, { dim: true, system: true });
+      onNotify("File opened", file.name, "folder_open");
       refocusEditor();
     };
     reader.readAsText(file);
@@ -65,7 +65,7 @@ export function createFileController(
     URL.revokeObjectURL(url);
 
     onSaved(filename);
-    onConsoleLine(`Saved: ${a.download}`, { dim: true, system: true });
+    onNotify("File saved", a.download, "save");
 
     refocusEditor();
   }

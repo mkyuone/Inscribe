@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 import { escapeHtml } from "../utils/dom.js";
-export function createConsoleController(dom) {
+export function createConsoleController(dom, onSystemToast) {
     let consoleBackup = null;
     let undoTimer = null;
     let stdoutBuffer = "";
@@ -62,11 +62,23 @@ export function createConsoleController(dom) {
             clearTimeout(undoTimer);
         consoleBackup = dom.consoleEl.innerHTML;
         dom.consoleEl.innerHTML = "";
-        addLine("Console cleared. Undo available for 3 seconds.", { dim: true, system: true });
-        dom.undoClearBtn.style.display = "inline-flex";
+        if (onSystemToast) {
+            onSystemToast("Console cleared", "Output removed.", "delete_outline", {
+                action: {
+                    label: "Undo",
+                    icon: "redo",
+                    onClick: () => {
+                        undoClear();
+                    }
+                },
+                durationMs: 3200
+            });
+        }
+        else {
+            addLine("Console cleared. Undo available for 3 seconds.", { dim: true, system: true });
+        }
         undoTimer = setTimeout(() => {
             consoleBackup = null;
-            dom.undoClearBtn.style.display = "none";
         }, 3000);
     }
     function undoClear() {
@@ -76,7 +88,7 @@ export function createConsoleController(dom) {
             clearTimeout(undoTimer);
         dom.consoleEl.innerHTML = consoleBackup;
         consoleBackup = null;
-        dom.undoClearBtn.style.display = "none";
+        onSystemToast === null || onSystemToast === void 0 ? void 0 : onSystemToast("Console restored", "Previous output has been restored.", "undo");
     }
     function collectOutput() {
         const lines = Array.from(dom.consoleEl.querySelectorAll(".consoleLine"))

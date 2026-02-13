@@ -119,21 +119,69 @@ export async function boot() {
         showIsolationWarning();
     }
     let sysToastTimer = null;
-    const showSystemToast = (title, desc, icon = "check_circle") => {
+    let sysToastActionHandler = null;
+    const clearSystemToastAction = () => {
+        sysToastActionHandler = null;
+        dom.sysToastActionBtn.innerHTML = "";
+        dom.sysToastActionBtn.hidden = true;
+        dom.sysToastActions.hidden = true;
+    };
+    const hideSystemToast = () => {
+        if (sysToastTimer) {
+            clearTimeout(sysToastTimer);
+            sysToastTimer = null;
+        }
+        dom.sysToast.classList.remove("show");
+        clearSystemToastAction();
+    };
+    const showSystemToast = (title, desc, icon = "check_circle", opts) => {
+        var _a;
         dom.sysToastTitle.textContent = title;
         dom.sysToastDesc.textContent = desc;
         dom.sysToastIcon.textContent = icon;
+        if (opts === null || opts === void 0 ? void 0 : opts.action) {
+            dom.sysToastActionBtn.innerHTML = "";
+            if (opts.action.icon) {
+                const iconEl = document.createElement("span");
+                iconEl.className = "material-icons";
+                iconEl.setAttribute("aria-hidden", "true");
+                iconEl.textContent = opts.action.icon;
+                dom.sysToastActionBtn.appendChild(iconEl);
+            }
+            const labelEl = document.createElement("span");
+            labelEl.textContent = opts.action.label;
+            dom.sysToastActionBtn.appendChild(labelEl);
+            dom.sysToastActionBtn.hidden = false;
+            dom.sysToastActions.hidden = false;
+            sysToastActionHandler = opts.action.onClick;
+        }
+        else {
+            clearSystemToastAction();
+        }
         dom.sysToast.classList.add("show");
         if (sysToastTimer)
             clearTimeout(sysToastTimer);
+        const timeoutMs = (_a = opts === null || opts === void 0 ? void 0 : opts.durationMs) !== null && _a !== void 0 ? _a : ((opts === null || opts === void 0 ? void 0 : opts.action) ? 3200 : 2400);
         sysToastTimer = setTimeout(() => {
-            dom.sysToast.classList.remove("show");
-        }, 2400);
+            hideSystemToast();
+        }, timeoutMs);
     };
-    dom.sysToast.addEventListener("click", () => {
-        dom.sysToast.classList.remove("show");
+    dom.sysToastActionBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const action = sysToastActionHandler;
+        if (!action)
+            return;
+        action();
+        hideSystemToast();
     });
-    const consoleApi = createConsoleController(dom);
+    dom.sysToast.addEventListener("click", () => {
+        hideSystemToast();
+    });
+    const notifySystem = (title, desc, icon = "info", opts) => {
+        showSystemToast(title, desc, icon, opts);
+    };
+    const consoleApi = createConsoleController(dom, showSystemToast);
     consoleApi.attachStdoutHandlers();
     const inputCtrl = setupConsoleInput(dom.consoleEl);
     const varsCtrl = createVariablesController(dom);
@@ -191,7 +239,7 @@ export async function boot() {
             state.isDirty = dirty;
             updateStatusBar(state, dom);
         },
-        onConsoleLine: consoleApi.addLine
+        onNotify: notifySystem
     });
     const fileCtrl = createFileController(dom, {
         onOpenFileText: (filename, content) => {
@@ -204,7 +252,7 @@ export async function boot() {
             setFilenameStatus(name, dom);
             editorCtrl.markSaved();
         },
-        onConsoleLine: consoleApi.addLine,
+        onNotify: notifySystem,
         refocusEditor
     });
     const saveWithHistory = () => {
@@ -252,9 +300,6 @@ export async function boot() {
     };
     const renameActiveTab = () => {
         tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.renameActiveTab();
-    };
-    const closeActiveTab = () => {
-        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.closeActiveTab();
     };
     const activateNextTab = () => {
         tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.activateNextTab();
@@ -308,9 +353,7 @@ export async function boot() {
     dom.aboutCommitHash.textContent = COMMIT_HASH;
     const shared = await shareCtrl.readSharedCodeFromUrl();
     if (shared && shared.code.trim().length) {
-        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.replaceActiveTab("shared.py", shared.code, {
-            announce: "Loaded shared code from link."
-        });
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.replaceActiveTab("shared.py", shared.code);
         lastHistoryCode = shared.code;
         lastHistoryTs = Date.now();
         void historyCtrl.addEdit({ ts: lastHistoryTs, kind: "shared", code: shared.code });
@@ -319,16 +362,13 @@ export async function boot() {
     else if (!hasStoredTabs && legacyDraft && legacyDraft.trim().length) {
         lastHistoryCode = legacyDraft;
         lastHistoryTs = Date.now();
-        consoleApi.addLine("Restored previous draft.", { dim: true, system: true });
+        notifySystem("Draft restored", "Recovered your previous unsaved draft.", "restore");
     }
     function toggleWrap() {
         prefs.lineWrap = !prefs.lineWrap;
         savePrefs(prefs);
         applyPrefs(prefs, editorCtrl.editor, dom);
-        consoleApi.addLine(`Line wrap: ${prefs.lineWrap ? "on" : "off"}`, {
-            dim: true,
-            system: true
-        });
+        notifySystem("Line wrap", prefs.lineWrap ? "Enabled." : "Disabled.", "wrap_text");
         refocusEditor();
     }
     dom.runBtn.addEventListener("click", runDefault);
@@ -337,21 +377,21 @@ export async function boot() {
     dom.runAllBtn.addEventListener("click", () => {
         setRunMode("all", dom, (next) => {
             state.runMode = next;
-        }, consoleApi.addLine);
+        }, (_text) => notifySystem("Run mode", "Set to All.", "play_arrow"));
         ui.closeRunMenu();
         refocusEditor();
     });
     dom.runSelBtn.addEventListener("click", () => {
         setRunMode("selection", dom, (next) => {
             state.runMode = next;
-        }, consoleApi.addLine);
+        }, (_text) => notifySystem("Run mode", "Set to Selection.", "select_all"));
         ui.closeRunMenu();
         refocusEditor();
     });
     dom.runCellBtn.addEventListener("click", () => {
         setRunMode("cell", dom, (next) => {
             state.runMode = next;
-        }, consoleApi.addLine);
+        }, (_text) => notifySystem("Run mode", "Set to Cell.", "view_agenda"));
         ui.closeRunMenu();
         refocusEditor();
     });
@@ -413,7 +453,6 @@ export async function boot() {
         toggleWrap();
     });
     dom.clearConsoleBtn.addEventListener("click", consoleApi.clearWithUndo);
-    dom.undoClearBtn.addEventListener("click", consoleApi.undoClear);
     dom.varsToggleBtn.addEventListener("click", () => {
         varsCtrl.toggle();
         refocusEditor();
@@ -449,7 +488,7 @@ export async function boot() {
     applyPrefs(prefs, editorCtrl.editor, dom);
     dom.resetPrefsBtn.addEventListener("click", () => {
         resetPrefs(prefs, editorCtrl.editor, dom);
-        consoleApi.addLine("Settings reset to defaults.", { dim: true, system: true });
+        notifySystem("Settings reset", "Preferences restored to defaults.", "settings_backup_restore");
     });
     ui.bindModalDismiss();
     ui.bindMenuDismiss();

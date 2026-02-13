@@ -67,7 +67,7 @@ function ensureUniqueFilename(name, docs, excludeId) {
     return `${base}-${Date.now()}${ext}`;
 }
 export function createTabsController(opts) {
-    const { dom, initialContent, legacyFilename, legacyDraft, setEditorDocument, refocusEditor, onActiveFilenameChange, onAnyDirtyChange, onConsoleLine } = opts;
+    const { dom, initialContent, legacyFilename, legacyDraft, setEditorDocument, refocusEditor, onActiveFilenameChange, onAnyDirtyChange, onNotify } = opts;
     const stored = parseStoredState(safeLS.get(LS_KEYS.TABS));
     let tabs = [];
     let activeId = "";
@@ -239,7 +239,7 @@ export function createTabsController(opts) {
         activeId = newTab.id;
         syncEditorToActiveTab();
         persistDebounced();
-        onConsoleLine(`Created new tab: ${name}`, { dim: true, system: true });
+        onNotify("New file created", name, "note_add");
         refocusEditor();
     }
     function openFileAsTab(name, content) {
@@ -257,7 +257,7 @@ export function createTabsController(opts) {
         syncEditorToActiveTab();
         persistDebounced();
     }
-    function replaceActiveTab(name, content, opts) {
+    function replaceActiveTab(name, content) {
         renamingTabId = null;
         const active = getActiveTab();
         if (!active)
@@ -268,9 +268,6 @@ export function createTabsController(opts) {
         active.dirty = false;
         syncEditorToActiveTab();
         persistDebounced();
-        if (opts === null || opts === void 0 ? void 0 : opts.announce) {
-            onConsoleLine(opts.announce, { dim: true, system: true });
-        }
     }
     function updateActiveContent(content) {
         const active = getActiveTab();

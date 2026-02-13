@@ -20,7 +20,7 @@ type StoredTabsState = {
   tabs: TabDoc[];
 };
 
-type ConsoleLineFn = (text: string, opts?: { dim?: boolean; system?: boolean }) => void;
+type NotifyFn = (title: string, desc: string, icon?: string) => void;
 
 type TabsControllerOptions = {
   dom: DomRefs;
@@ -31,7 +31,7 @@ type TabsControllerOptions = {
   refocusEditor: () => void;
   onActiveFilenameChange: (name: string) => void;
   onAnyDirtyChange: (dirty: boolean) => void;
-  onConsoleLine: ConsoleLineFn;
+  onNotify: NotifyFn;
 };
 
 export type TabsController = {
@@ -41,7 +41,7 @@ export type TabsController = {
   activateNextTab: () => void;
   activatePreviousTab: () => void;
   openFileAsTab: (name: string, content: string) => void;
-  replaceActiveTab: (name: string, content: string, opts?: { announce?: string }) => void;
+  replaceActiveTab: (name: string, content: string) => void;
   updateActiveContent: (content: string) => void;
   setActiveDirty: (dirty: boolean) => void;
   markActiveSaved: () => void;
@@ -128,7 +128,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     refocusEditor,
     onActiveFilenameChange,
     onAnyDirtyChange,
-    onConsoleLine
+    onNotify
   } = opts;
 
   const stored = parseStoredState(safeLS.get(LS_KEYS.TABS));
@@ -316,7 +316,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     activeId = newTab.id;
     syncEditorToActiveTab();
     persistDebounced();
-    onConsoleLine(`Created new tab: ${name}`, { dim: true, system: true });
+    onNotify("New file created", name, "note_add");
     refocusEditor();
   }
 
@@ -336,7 +336,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     persistDebounced();
   }
 
-  function replaceActiveTab(name: string, content: string, opts?: { announce?: string }) {
+  function replaceActiveTab(name: string, content: string) {
     renamingTabId = null;
     const active = getActiveTab();
     if (!active) return;
@@ -346,9 +346,6 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     active.dirty = false;
     syncEditorToActiveTab();
     persistDebounced();
-    if (opts?.announce) {
-      onConsoleLine(opts.announce, { dim: true, system: true });
-    }
   }
 
   function updateActiveContent(content: string) {
