@@ -96,6 +96,9 @@ export function createTabsController(opts) {
         activeId = tabs[0].id;
     }
     let renamingTabId = null;
+    let dragTabId = null;
+    let dragOverTabId = null;
+    let dragOverPosition = null;
     function getActiveTab() {
         var _a;
         return (_a = tabs.find((tab) => tab.id === activeId)) !== null && _a !== void 0 ? _a : tabs[0];
@@ -129,6 +132,7 @@ export function createTabsController(opts) {
             const item = document.createElement("div");
             item.className = `tabItem${tab.id === activeId ? " active" : ""}${tab.id === renamingTabId ? " renaming" : ""}`;
             item.dataset.tabId = tab.id;
+            item.draggable = tab.id !== renamingTabId;
             if (tab.id === renamingTabId) {
                 const renameInput = document.createElement("input");
                 renameInput.type = "text";
@@ -342,6 +346,47 @@ export function createTabsController(opts) {
         closeTab(activeId);
         refocusEditor();
     }
+    function clearDragState() {
+        dragTabId = null;
+        dragOverTabId = null;
+        dragOverPosition = null;
+    }
+    function clearDragClasses() {
+        dom.tabStrip.querySelectorAll(".tabItem").forEach((el) => {
+            el.classList.remove("dragging", "dropBefore", "dropAfter");
+        });
+    }
+    function applyDragClasses() {
+        clearDragClasses();
+        if (dragTabId) {
+            const sourceEl = dom.tabStrip.querySelector(`.tabItem[data-tab-id="${dragTabId}"]`);
+            sourceEl === null || sourceEl === void 0 ? void 0 : sourceEl.classList.add("dragging");
+        }
+        if (dragOverTabId && dragOverPosition) {
+            const targetEl = dom.tabStrip.querySelector(`.tabItem[data-tab-id="${dragOverTabId}"]`);
+            if (targetEl) {
+                targetEl.classList.add(dragOverPosition === "before" ? "dropBefore" : "dropAfter");
+            }
+        }
+    }
+    function reorderDraggedTab() {
+        if (!dragTabId || !dragOverTabId || !dragOverPosition)
+            return;
+        if (dragTabId === dragOverTabId)
+            return;
+        const sourceIdx = tabs.findIndex((tab) => tab.id === dragTabId);
+        const targetIdx = tabs.findIndex((tab) => tab.id === dragOverTabId);
+        if (sourceIdx < 0 || targetIdx < 0)
+            return;
+        const sourceTab = tabs[sourceIdx];
+        const nextTabs = tabs.filter((tab) => tab.id !== dragTabId);
+        const adjustedTargetIdx = sourceIdx < targetIdx ? targetIdx - 1 : targetIdx;
+        const insertIdx = dragOverPosition === "before" ? adjustedTargetIdx : adjustedTargetIdx + 1;
+        nextTabs.splice(Math.max(0, Math.min(insertIdx, nextTabs.length)), 0, sourceTab);
+        tabs = nextTabs;
+        renderTabs();
+        persistDebounced();
+    }
     function activateByOffset(offset) {
         if (tabs.length <= 1)
             return;
@@ -356,6 +401,65 @@ export function createTabsController(opts) {
         persistDebounced();
     }
     dom.newTabBtn.addEventListener("click", createNewTab);
+    dom.tabStrip.addEventListener("dragstart", (event) => {
+        const target = event.target;
+        if (!target)
+            return;
+        if (target.closest('[data-action="close"]')) {
+            event.preventDefault();
+            return;
+        }
+        const tabItem = target.closest(".tabItem");
+        if (!tabItem)
+            return;
+        const tabId = tabItem.dataset.tabId;
+        if (!tabId || tabId === renamingTabId) {
+            event.preventDefault();
+            return;
+        }
+        dragTabId = tabId;
+        dragOverTabId = null;
+        dragOverPosition = null;
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", tabId);
+        }
+        applyDragClasses();
+    });
+    dom.tabStrip.addEventListener("dragover", (event) => {
+        if (!dragTabId)
+            return;
+        const target = event.target;
+        const tabItem = target === null || target === void 0 ? void 0 : target.closest(".tabItem");
+        if (!tabItem)
+            return;
+        const tabId = tabItem.dataset.tabId;
+        if (!tabId || tabId === dragTabId)
+            return;
+        event.preventDefault();
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "move";
+        }
+        const rect = tabItem.getBoundingClientRect();
+        const nextPosition = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
+        if (dragOverTabId === tabId && dragOverPosition === nextPosition)
+            return;
+        dragOverTabId = tabId;
+        dragOverPosition = nextPosition;
+        applyDragClasses();
+    });
+    dom.tabStrip.addEventListener("drop", (event) => {
+        if (!dragTabId)
+            return;
+        event.preventDefault();
+        reorderDraggedTab();
+        clearDragState();
+        clearDragClasses();
+    });
+    dom.tabStrip.addEventListener("dragend", () => {
+        clearDragState();
+        clearDragClasses();
+    });
     dom.tabStrip.addEventListener("click", (event) => {
         const target = event.target;
         if (!target)
