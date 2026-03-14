@@ -19,7 +19,8 @@ export function createShareController(
   getCode: () => string,
   addConsoleLine: (text: string, opts?: { dim?: boolean; system?: boolean; error?: boolean }) => void,
   saveFile: () => void,
-  refocusEditor: () => void
+  refocusEditor: () => void,
+  isWorkspaceEnabled: () => boolean
 ): ShareController {
   let toastTimer: ReturnType<typeof setTimeout> | null = null;
   const shareToastVisibility = createToastVisibility(dom.shareToast);
@@ -136,6 +137,10 @@ export function createShareController(
   function confirmLongUrl(length: number) {
     return new Promise<boolean>((resolve) => {
       dom.shareWarnText.textContent = `This share link is very long (${length} characters). Continue anyway?`;
+      dom.shareWarnHint.textContent = isWorkspaceEnabled()
+        ? "Tip: download an .inscribeproj file instead to avoid very long URLs."
+        : "Tip: download the current file instead to avoid very long URLs.";
+      dom.shareWarnDownloadBtn.textContent = isWorkspaceEnabled() ? "Download project" : "Download file";
       openShareWarn();
 
       const cleanup = () => {
@@ -199,7 +204,12 @@ export function createShareController(
       if (url.length > warnThreshold) {
         const proceed = await confirmLongUrl(url.length);
         if (!proceed) {
-          showToast("Share cancelled", "Use Save to download a .py file.");
+          showToast(
+            "Share cancelled",
+            isWorkspaceEnabled()
+              ? "Use Save to download the current .inscribeproj file."
+              : "Use Save to download the current file."
+          );
           return;
         }
       }

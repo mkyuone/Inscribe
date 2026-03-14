@@ -7,7 +7,20 @@ export function loadPrefs() {
         const raw = safeLS.get(LS_KEYS.PREFS);
         if (!raw)
             return { ...DEFAULT_PREFS };
-        return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        const legacyWorkspaceVisible = typeof parsed.showWorkspaceSidebar === "boolean" ? parsed.showWorkspaceSidebar : undefined;
+        return {
+            ...DEFAULT_PREFS,
+            ...parsed,
+            workspaceFeatureEnabled: typeof parsed.workspaceFeatureEnabled === "boolean"
+                ? parsed.workspaceFeatureEnabled
+                : legacyWorkspaceVisible !== null && legacyWorkspaceVisible !== void 0 ? legacyWorkspaceVisible : DEFAULT_PREFS.workspaceFeatureEnabled,
+            showWorkspaceSidebar: typeof parsed.showWorkspaceSidebar === "boolean"
+                ? parsed.showWorkspaceSidebar
+                : typeof parsed.workspaceFeatureEnabled === "boolean"
+                    ? parsed.workspaceFeatureEnabled
+                    : DEFAULT_PREFS.showWorkspaceSidebar
+        };
     }
     catch {
         return { ...DEFAULT_PREFS };
@@ -24,7 +37,11 @@ export function savePrefs(prefs) {
 export function applyPrefs(prefs, editor, dom) {
     const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
     const resolvedTheme = prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+    const workspaceFeatureEnabled = !!prefs.workspaceFeatureEnabled;
+    const workspaceVisible = workspaceFeatureEnabled && !!prefs.showWorkspaceSidebar;
     document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.dataset.workspaceFeature = workspaceFeatureEnabled ? "on" : "off";
+    document.documentElement.dataset.workspaceSidebar = workspaceVisible ? "on" : "off";
     editor.setOption("theme", resolvedTheme === "dark" ? "inscribe-dark" : "eclipse");
     dom.dynamicStyles.textContent = `
     .CodeMirror{ font-size:${prefs.editorFontSize}px; }
@@ -47,16 +64,40 @@ export function applyPrefs(prefs, editor, dom) {
     dom.wrapToggle.checked = !!prefs.lineWrap;
     dom.activeLineToggle.checked = !!prefs.highlightActiveLine;
     dom.splitToggle.checked = !!prefs.splitHorizontal;
+    dom.workspaceFeatureToggle.checked = workspaceFeatureEnabled;
     dom.execTimeToggle.checked = !!prefs.showExecTime;
     dom.themeAuto.checked = prefs.theme === "system";
     dom.themeLight.checked = prefs.theme === "light";
     dom.themeDark.checked = prefs.theme === "dark";
     dom.themeGroup.dataset.choice = prefs.theme;
+    dom.workspacePane.hidden = !workspaceVisible;
+    dom.workspaceResizer.hidden = !workspaceVisible;
+    dom.workspaceToggleBtn.hidden = !workspaceFeatureEnabled;
+    dom.workspaceToggleBtn.setAttribute("aria-pressed", workspaceVisible ? "true" : "false");
+    dom.workspaceToggleBtn.classList.toggle("active", workspaceVisible);
+    dom.workspaceToggleBtn.title = workspaceVisible ? "Hide workspace sidebar" : "Show workspace sidebar";
+    dom.workspaceToggleBtn.setAttribute("aria-label", workspaceVisible ? "Hide workspace sidebar" : "Show workspace sidebar");
+    dom.openBtn.title = workspaceFeatureEnabled
+        ? "Import files or project (Cmd/Ctrl + O)"
+        : "Open file (Cmd/Ctrl + O)";
+    dom.openBtn.setAttribute("aria-label", workspaceFeatureEnabled ? "Import files or project" : "Open file");
+    dom.saveBtn.title = workspaceFeatureEnabled
+        ? "Save project (.inscribeproj, Cmd/Ctrl + S)"
+        : "Save file (Cmd/Ctrl + S)";
+    dom.saveBtn.setAttribute("aria-label", workspaceFeatureEnabled ? "Save project" : "Save file");
+    const stackedWorkspace = getComputedStyle(dom.workspaceLayout).flexDirection === "column";
+    if (stackedWorkspace) {
+        dom.workspacePane.style.width = "";
+    }
+    else {
+        dom.workspacePane.style.height = "";
+    }
     const themeColor = document.querySelector('meta[name="theme-color"]');
     if (themeColor) {
         themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
     }
     document.documentElement.dataset.activeLine = prefs.highlightActiveLine ? "on" : "off";
+    requestAnimationFrame(() => editor.refresh());
 }
 export function bindPrefsUI(prefs, editor, dom, onChange) {
     var _a, _b;
@@ -86,6 +127,17 @@ export function bindPrefsUI(prefs, editor, dom, onChange) {
     });
     dom.splitToggle.addEventListener("change", () => {
         prefs.splitHorizontal = !!dom.splitToggle.checked;
+        savePrefs(prefs);
+        applyPrefs(prefs, editor, dom);
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    });
+    dom.workspaceFeatureToggle.addEventListener("change", () => {
+        const nextEnabled = !!dom.workspaceFeatureToggle.checked;
+        if (nextEnabled && !prefs.workspaceFeatureEnabled) {
+            window.alert("Workspace projects are still under development.");
+        }
+        prefs.workspaceFeatureEnabled = nextEnabled;
+        prefs.showWorkspaceSidebar = prefs.workspaceFeatureEnabled;
         savePrefs(prefs);
         applyPrefs(prefs, editor, dom);
         onChange === null || onChange === void 0 ? void 0 : onChange();

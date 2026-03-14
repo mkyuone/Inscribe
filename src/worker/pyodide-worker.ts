@@ -21,9 +21,38 @@ type InitMessage = {
   interruptSab: SharedArrayBuffer;
 };
 
+type WorkerWorkspaceTransferFile =
+  | { path: string; mime: string; kind: "text"; text: string }
+  | { path: string; mime: string; kind: "binary"; bytes: Uint8Array | ArrayBuffer };
+
+type WorkerWorkspaceSnapshotFile =
+  | { path: string; mime: string; kind: "text"; text: string }
+  | { path: string; mime: string; kind: "binary"; bytes: Uint8Array };
+
+type LegacyWorkspaceFile = {
+  path: string;
+  mime: string;
+  encoding: "utf8" | "base64";
+  content: string;
+};
+
+type WorkerWorkspaceTransferSnapshot = {
+  activePath: string;
+  files: WorkerWorkspaceTransferFile[];
+};
+
+type WorkerWorkspaceSnapshot = {
+  activePath: string;
+  files: WorkerWorkspaceSnapshotFile[];
+};
+
 type RunMessage = {
   type: "run";
   code: string;
+  mode: "all" | "selection" | "cell";
+  workspace?: WorkerWorkspaceTransferSnapshot;
+  activePath?: string;
+  workspaceFiles?: LegacyWorkspaceFile[];
 };
 
 type ResetMessage = { type: "reset" };
@@ -41,6 +70,8 @@ let pauseStartMs = 0;
 let pauseDepth = 0;
 
 const textDecoder = new TextDecoder();
+const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
+const WORKSPACE_ROOT = "/workspace";
 
 function post(type: string, payload: Record<string, unknown> = {}) {
   ctx.postMessage({ type, ...payload });
@@ -103,6 +134,257 @@ function readLine(prompt?: string) {
   const value = textDecoder.decode(copy);
   Atomics.store(stdinI32, 0, 0);
   return value;
+}
+
+function normalizeWorkspacePath(path: string) {
+  const parts = String(path || "")
+    .replaceAll("\\", "/")
+    .split("/");
+  const sanitized: string[] = [];
+  for (const rawPart of parts) {
+    const part = rawPart.trim();
+    if (!part || part === ".") continue;
+    if (part === ".." || part.includes("\0")) return "";
+    sanitized.push(part);
+  }
+  return sanitized.join("/");
+}
+
+function base64ToBytes(base64: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function toUint8Array(value: Uint8Array | ArrayBuffer) {
+  if (value instanceof Uint8Array) return value;
+  return new Uint8Array(value);
+}
+
+function toWorkspaceSnapshot(message: RunMessage): WorkerWorkspaceSnapshot {
+  if (message.workspace) {
+    return {
+      activePath: normalizeWorkspacePath(message.workspace.activePath),
+      files: (message.workspace.files || [])
+        .map((file) => {
+          const path = normalizeWorkspacePath(file.path);
+          if (!path) return null;
+          if (file.kind === "binary") {
+            return {
+              path,
+              mime: file.mime || "",
+              kind: "binary" as const,
+              bytes: toUint8Array(file.bytes)
+            };
+          }
+          return {
+            path,
+            mime: file.mime || "",
+            kind: "text" as const,
+            text: file.text
+          };
+        })
+        .filter((file): file is WorkerWorkspaceSnapshotFile => !!file)
+    };
+  }
+
+  return {
+    activePath: normalizeWorkspacePath(message.activePath || ""),
+    files: (message.workspaceFiles || [])
+      .map((file) => {
+        const path = normalizeWorkspacePath(file.path);
+        if (!path) return null;
+        if (file.encoding === "base64") {
+          return {
+            path,
+            mime: file.mime || "",
+            kind: "binary" as const,
+            bytes: base64ToBytes(file.content)
+          };
+        }
+        return {
+          path,
+          mime: file.mime || "",
+          kind: "text" as const,
+          text: file.content
+        };
+      })
+      .filter((file): file is WorkerWorkspaceSnapshotFile => !!file)
+  };
+}
+
+function getFs() {
+  return pyodide?.FS ?? null;
+}
+
+function clearPath(path: string) {
+  const FS = getFs();
+  if (!FS) return;
+  const stat = FS.stat(path);
+  if (FS.isDir(stat.mode)) {
+    for (const child of FS.readdir(path)) {
+      if (child === "." || child === "..") continue;
+      clearPath(`${path}/${child}`);
+    }
+    FS.rmdir(path);
+    return;
+  }
+  FS.unlink(path);
+}
+
+function ensureWorkspaceRoot() {
+  const FS = getFs();
+  if (!FS) return;
+  try {
+    clearPath(WORKSPACE_ROOT);
+  } catch {
+    // ignore
+  }
+  try {
+    FS.mkdirTree(WORKSPACE_ROOT);
+  } catch {
+    // ignore
+  }
+}
+
+function writeWorkspaceFiles(files: WorkerWorkspaceSnapshotFile[]) {
+  const FS = getFs();
+  if (!FS) return;
+  ensureWorkspaceRoot();
+  for (const file of files) {
+    const path = normalizeWorkspacePath(file.path);
+    if (!path) continue;
+    const fullPath = `${WORKSPACE_ROOT}/${path}`;
+    const slashIdx = fullPath.lastIndexOf("/");
+    if (slashIdx > WORKSPACE_ROOT.length) {
+      FS.mkdirTree(fullPath.slice(0, slashIdx));
+    }
+    if (file.kind === "text") {
+      FS.writeFile(fullPath, file.text, { encoding: "utf8" });
+    } else {
+      FS.writeFile(fullPath, toUint8Array(file.bytes));
+    }
+  }
+}
+
+function snapshotWorkspaceSync(source: WorkerWorkspaceSnapshot) {
+  const FS = getFs();
+  if (!FS) {
+    return {
+      activePath: normalizeWorkspacePath(source.activePath),
+      files: [],
+      deletedPaths: source.files.map((file) => normalizeWorkspacePath(file.path)).filter(Boolean)
+    };
+  }
+  const mimeByPath = new Map(
+    source.files.map((file) => [normalizeWorkspacePath(file.path), file.mime || ""])
+  );
+  const originalPaths = new Set(
+    source.files.map((file) => normalizeWorkspacePath(file.path)).filter(Boolean)
+  );
+  const currentPaths = new Set<string>();
+  const results: WorkerWorkspaceSnapshotFile[] = [];
+
+  const walk = (dir: string) => {
+    for (const child of FS.readdir(dir)) {
+      if (child === "." || child === ".." || child === "__pycache__") continue;
+      const fullPath = `${dir}/${child}`;
+      const stat = FS.stat(fullPath);
+      if (FS.isDir(stat.mode)) {
+        walk(fullPath);
+        continue;
+      }
+      const relPath = normalizeWorkspacePath(fullPath.slice(`${WORKSPACE_ROOT}/`.length));
+      if (!relPath) continue;
+      currentPaths.add(relPath);
+      const bytes = FS.readFile(fullPath, { encoding: "binary" }) as Uint8Array;
+      try {
+        results.push({
+          path: relPath,
+          mime: mimeByPath.get(relPath) || "",
+          kind: "text",
+          text: utf8Decoder.decode(bytes)
+        });
+      } catch {
+        results.push({
+          path: relPath,
+          mime: mimeByPath.get(relPath) || "",
+          kind: "binary",
+          bytes: new Uint8Array(bytes)
+        });
+      }
+    }
+  };
+
+  try {
+    walk(WORKSPACE_ROOT);
+  } catch {
+    return {
+      activePath: normalizeWorkspacePath(source.activePath),
+      files: [],
+      deletedPaths: Array.from(originalPaths).sort((a, b) => a.localeCompare(b))
+    };
+  }
+
+  results.sort((a, b) => a.path.localeCompare(b.path));
+  return {
+    activePath: normalizeWorkspacePath(source.activePath),
+    files: results,
+    deletedPaths: Array.from(originalPaths)
+      .filter((path) => !currentPaths.has(path))
+      .sort((a, b) => a.localeCompare(b))
+  };
+}
+
+async function prepareWorkspaceEnvironment(activePath: string) {
+  const workspaceRootLiteral = JSON.stringify(WORKSPACE_ROOT);
+  const normalizedActivePath = normalizeWorkspacePath(activePath);
+  const activeDir =
+    normalizedActivePath && normalizedActivePath.includes("/")
+      ? `${WORKSPACE_ROOT}/${normalizedActivePath.slice(
+          0,
+          normalizedActivePath.lastIndexOf("/")
+        )}`
+      : WORKSPACE_ROOT;
+  const activeDirLiteral = JSON.stringify(activeDir);
+  const code = `
+import importlib
+import os
+import sys
+
+_workspace_root = ${workspaceRootLiteral}
+_active_dir = ${activeDirLiteral}
+if _workspace_root not in sys.path:
+    sys.path.insert(0, _workspace_root)
+if _active_dir and _active_dir not in sys.path:
+    sys.path.insert(0, _active_dir)
+os.chdir(_workspace_root)
+importlib.invalidate_caches()
+
+def _inscribe_in_workspace(value):
+    if isinstance(value, str):
+        return value.startswith(_workspace_root)
+    try:
+        return any(isinstance(item, str) and item.startswith(_workspace_root) for item in value)
+    except Exception:
+        return False
+
+for _name, _module in list(sys.modules.items()):
+    _file = getattr(_module, "__file__", "")
+    _path = getattr(_module, "__path__", ())
+    if _inscribe_in_workspace(_file) or _inscribe_in_workspace(_path):
+        del sys.modules[_name]
+`;
+  if (mainGlobals) {
+    pyodide.runPython(code, { globals: mainGlobals });
+  } else {
+    pyodide.runPython(code);
+  }
+
+  return normalizedActivePath ? `${WORKSPACE_ROOT}/${normalizedActivePath}` : "";
 }
 
 async function ensurePyodide() {
@@ -246,6 +528,15 @@ function postVariablesSnapshot() {
   }
 }
 
+function postEmptyVariablesSnapshot() {
+  post("vars", { items: [], truncated: false });
+}
+
+function isMemoryExhaustionError(err: unknown) {
+  const msg = err?.toString?.() ?? String(err);
+  return msg.includes("MemoryError") || /out of memory/i.test(msg);
+}
+
 ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
   const message = event.data;
   try {
@@ -259,6 +550,7 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
 
     if (message.type === "reset") {
       pyodide = null;
+      mainGlobals = null;
       post("status", { ready: false });
       return;
     }
@@ -266,22 +558,55 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
     if (message.type === "run") {
       await ensurePyodide();
       resetRunTiming();
+      const workspace = toWorkspaceSnapshot(message);
       let runOk = false;
       try {
+        writeWorkspaceFiles(workspace.files);
+        const activeFsPath = await prepareWorkspaceEnvironment(workspace.activePath);
         if (mainGlobals) {
           pyodide.runPython(BUILTIN_GUARD_CODE, { globals: mainGlobals });
-          await pyodide.runPythonAsync(message.code, { globals: mainGlobals });
+          if (message.mode === "all" && activeFsPath.endsWith(".py")) {
+            const runCode =
+              `__inscribe_path = ${JSON.stringify(activeFsPath)}\n` +
+              "globals()['__file__'] = __inscribe_path\n" +
+              "globals()['__name__'] = '__main__'\n" +
+              "globals()['__package__'] = None\n" +
+              "import sys\n" +
+              "sys.argv = [__inscribe_path]\n" +
+              "with open(__inscribe_path, 'rb') as _f:\n" +
+              "    _inscribe_code = _f.read()\n" +
+              "exec(compile(_inscribe_code, __inscribe_path, 'exec'), globals())\n";
+            await pyodide.runPythonAsync(runCode, { globals: mainGlobals });
+          } else {
+            await pyodide.runPythonAsync(message.code, { globals: mainGlobals });
+          }
         } else {
           pyodide.runPython(BUILTIN_GUARD_CODE);
-          await pyodide.runPythonAsync(message.code);
+          if (message.mode === "all" && activeFsPath.endsWith(".py")) {
+            const runCode =
+              `__inscribe_path = ${JSON.stringify(activeFsPath)}\n` +
+              "globals()['__file__'] = __inscribe_path\n" +
+              "globals()['__name__'] = '__main__'\n" +
+              "globals()['__package__'] = None\n" +
+              "import sys\n" +
+              "sys.argv = [__inscribe_path]\n" +
+              "with open(__inscribe_path, 'rb') as _f:\n" +
+              "    _inscribe_code = _f.read()\n" +
+              "exec(compile(_inscribe_code, __inscribe_path, 'exec'), globals())\n";
+            await pyodide.runPythonAsync(runCode);
+          } else {
+            await pyodide.runPythonAsync(message.code);
+          }
         }
         runOk = true;
         if (pauseDepth > 0) endPause();
         const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
         postVariablesSnapshot();
+        post("workspace-sync", { sync: snapshotWorkspaceSync(workspace) });
         post("run-complete", { ok: true, durationMs });
       } catch (err) {
         const msg = err?.toString?.() ?? String(err);
+        const fatalMemory = isMemoryExhaustionError(err);
         if (msg.includes("KeyboardInterrupt")) {
           post("interrupted");
         } else {
@@ -291,14 +616,25 @@ ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
         }
         if (pauseDepth > 0) endPause();
         const durationMs = Math.max(0, performance.now() - runStartMs - pausedMs);
-        postVariablesSnapshot();
-        post("run-complete", { ok: runOk, durationMs });
+        if (fatalMemory) {
+          postEmptyVariablesSnapshot();
+          post("run-complete", { ok: false, durationMs, fatal: "memory" });
+        } else {
+          postVariablesSnapshot();
+          post("workspace-sync", { sync: snapshotWorkspaceSync(workspace) });
+          post("run-complete", { ok: runOk, durationMs });
+        }
       }
       return;
     }
   } catch (err) {
     const msg = err?.toString?.() ?? String(err);
     post("error-line", { text: msg });
+    if (isMemoryExhaustionError(err)) {
+      postEmptyVariablesSnapshot();
+      post("run-complete", { ok: false, fatal: "memory" });
+      return;
+    }
     post("run-complete", { ok: false });
   }
 };

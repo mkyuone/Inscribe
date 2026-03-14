@@ -62,7 +62,11 @@ function applyStartupShellPrefs() {
     }
     const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
     const resolvedTheme = prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+    const workspaceFeatureEnabled = !!prefs.workspaceFeatureEnabled;
+    const workspaceVisible = workspaceFeatureEnabled && !!prefs.showWorkspaceSidebar;
     document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.dataset.workspaceFeature = workspaceFeatureEnabled ? "on" : "off";
+    document.documentElement.dataset.workspaceSidebar = workspaceVisible ? "on" : "off";
     const themeColor = document.querySelector('meta[name="theme-color"]');
     if (themeColor) {
         themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
@@ -251,13 +255,19 @@ export async function boot() {
         notifySystem("Session recovered", "Recovered your workspace from the last local backup snapshot.", "restore");
     }
     const fileCtrl = createFileController(dom, {
-        onOpenFileText: (filename, content) => {
-            tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.openFileAsTab(filename, content);
+        isWorkspaceEnabled: () => !!prefs.workspaceFeatureEnabled,
+        importFiles: (files, opts) => {
+            tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.importFiles(files, opts);
         },
-        getActiveFilename: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveFilename()) || "untitled.py",
-        getActiveContent: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveContent()) || editorCtrl.getValue(),
+        getAllFiles: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getAllFiles()) || [],
+        getActiveFile: () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveFile()) || null,
         onSaved: (name) => {
-            tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.markActiveSaved();
+            if (prefs.workspaceFeatureEnabled) {
+                tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.markAllSaved();
+            }
+            else {
+                tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.markActiveSaved();
+            }
             setFilenameStatus(name, dom);
             editorCtrl.markSaved();
         },
@@ -344,8 +354,31 @@ export async function boot() {
         dom.asyncWarnConfirmBtn.addEventListener("click", onConfirm);
         dom.asyncWarnOverlay.addEventListener("click", onBackdrop);
     });
-    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.beginRunCapture, consoleApi.flushStdoutBuffer, consoleApi.getRunStdout, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."), ({ items, truncated }) => {
+    pyodideCtrl = createPyodideController(state, consoleApi.addLine, () => updateStatusBar(state, dom), refocusEditor, editorCtrl.getCodeForMode, () => ((tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getAllFiles()) || []).map((file) => ({
+        path: file.name,
+        mime: file.mime || "",
+        encoding: file.encoding || "utf8",
+        content: file.content
+    })), () => (tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.getActiveFilename()) || "untitled.py", getRunModeLabel, dom.runBtn, dom.runModeBtn, dom.runGroup, prefs, consoleApi.resetStdoutBuffer, consoleApi.beginRunCapture, consoleApi.flushStdoutBuffer, consoleApi.getRunStdout, consoleApi.handleStdout, inputCtrl.requestInput, inputCtrl.cancelActiveInput, showIsolationWarning, confirmAsyncioRun, () => showSystemToast("Pyodide ready", "You can run code now."), ({ items, truncated }) => {
         varsCtrl.setVariables(items, truncated);
+    }, (files, sync) => {
+        const summary = tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.applyRuntimeWorkspace(files, sync);
+        if (!summary)
+            return;
+        const parts = [];
+        if (summary.added)
+            parts.push(`${summary.added} new`);
+        if (summary.updated)
+            parts.push(`${summary.updated} updated`);
+        if (summary.removed)
+            parts.push(`${summary.removed} removed`);
+        if (summary.createdFallback) {
+            notifySystem("Workspace cleared", "Your program removed every workspace file, so Inscribe opened a new blank file to keep editing available.", "note_add");
+            return;
+        }
+        if (parts.length) {
+            notifySystem("Workspace updated", `Your program changed the workspace: ${parts.join(", ")}.`, "folder");
+        }
     }, ({ stdout, interrupted }) => {
         if (!stdout || !stdout.trim())
             return;
@@ -356,7 +389,7 @@ export async function boot() {
             stdout
         });
     });
-    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor);
+    const shareCtrl = createShareController(dom, () => editorCtrl.getValue(), consoleApi.addLine, () => fileCtrl.saveFile(), refocusEditor, () => !!prefs.workspaceFeatureEnabled);
     dom.aboutVersion.textContent = `v${APP_VERSION}`;
     dom.aboutBuildTime.textContent = BUILD_TIME;
     dom.aboutCommitHash.textContent = COMMIT_HASH;
@@ -380,9 +413,29 @@ export async function boot() {
         notifySystem("Line wrap", prefs.lineWrap ? "Enabled." : "Disabled.", "wrap_text");
         refocusEditor();
     }
+    function setWorkspaceSidebarVisible(visible, opts) {
+        if (!prefs.workspaceFeatureEnabled) {
+            prefs.showWorkspaceSidebar = false;
+            savePrefs(prefs);
+            applyPrefs(prefs, editorCtrl.editor, dom);
+            return;
+        }
+        prefs.showWorkspaceSidebar = visible;
+        savePrefs(prefs);
+        applyPrefs(prefs, editorCtrl.editor, dom);
+        if (!(opts === null || opts === void 0 ? void 0 : opts.quiet)) {
+            notifySystem("Workspace sidebar", visible ? "Shown" : "Hidden", visible ? "left_panel_open" : "left_panel_close");
+        }
+    }
     dom.runBtn.addEventListener("click", runDefault);
     dom.runModeBtn.addEventListener("click", ui.toggleRunMenu);
     dom.editorActionsBtn.addEventListener("click", ui.toggleEditorActions);
+    dom.workspaceToggleBtn.addEventListener("click", () => {
+        if (!prefs.workspaceFeatureEnabled)
+            return;
+        setWorkspaceSidebarVisible(!prefs.showWorkspaceSidebar);
+        refocusEditor();
+    });
     dom.runAllBtn.addEventListener("click", () => {
         setRunMode("all", dom, (next) => {
             state.runMode = next;
@@ -406,6 +459,36 @@ export async function boot() {
     });
     dom.openBtn.addEventListener("click", () => fileCtrl.openFile());
     dom.saveBtn.addEventListener("click", saveWithHistory);
+    dom.workspaceNewBtn.addEventListener("click", () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.createNewTab();
+    });
+    dom.workspaceUploadBtn.addEventListener("click", () => {
+        ui.openWorkspaceUpload();
+    });
+    dom.workspaceUploadFileChoiceBtn.addEventListener("click", () => {
+        ui.closeWorkspaceUpload();
+        fileCtrl.openWorkspaceFiles();
+    });
+    dom.workspaceUploadFolderChoiceBtn.addEventListener("click", () => {
+        ui.closeWorkspaceUpload();
+        fileCtrl.openFolder();
+    });
+    dom.workspaceUploadCancelBtn.addEventListener("click", () => {
+        ui.closeWorkspaceUpload();
+        refocusEditor();
+    });
+    dom.workspaceRenameBtn.addEventListener("click", () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.renameActiveTab("workspace");
+    });
+    dom.workspaceDownloadBtn.addEventListener("click", () => fileCtrl.downloadActiveFile());
+    dom.workspaceDeleteBtn.addEventListener("click", () => {
+        tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.closeActiveTab();
+        refocusEditor();
+    });
+    dom.workspaceCloseBtn.addEventListener("click", () => {
+        setWorkspaceSidebarVisible(false);
+        refocusEditor();
+    });
     dom.shareBtn.addEventListener("click", () => {
         void shareCtrl.shareCode();
     });

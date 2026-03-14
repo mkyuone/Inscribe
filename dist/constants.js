@@ -12,6 +12,8 @@ export const DEFAULT_PREFS = {
     consoleFontSize: 13.5,
     lineWrap: false,
     highlightActiveLine: true,
+    workspaceFeatureEnabled: false,
+    showWorkspaceSidebar: false,
     showExecTime: true,
     splitHorizontal: true,
     theme: "system"

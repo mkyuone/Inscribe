@@ -14,8 +14,10 @@ export type DomRefs = {
   runLabel: HTMLSpanElement;
   openBtn: HTMLButtonElement;
   saveBtn: HTMLButtonElement;
+  workspaceToggleBtn: HTMLButtonElement;
   shareBtn: HTMLButtonElement;
   fileInput: HTMLInputElement;
+  directoryInput: HTMLInputElement;
   moreBtn: HTMLButtonElement;
   moreMenu: HTMLDivElement;
   shareMenuBtn: HTMLButtonElement;
@@ -32,7 +34,26 @@ export type DomRefs = {
   editorActionsMenu: HTMLDivElement;
   renameTabBtn: HTMLButtonElement;
   closeTabBtn: HTMLButtonElement;
+  workspaceLayout: HTMLDivElement;
   editorPane: HTMLDivElement;
+  workspacePane: HTMLElement;
+  workspaceResizer: HTMLDivElement;
+  workspaceNewBtn: HTMLButtonElement;
+  workspaceUploadBtn: HTMLButtonElement;
+  workspaceRenameBtn: HTMLButtonElement;
+  workspaceDownloadBtn: HTMLButtonElement;
+  workspaceDeleteBtn: HTMLButtonElement;
+  workspaceCloseBtn: HTMLButtonElement;
+  workspaceMeta: HTMLDivElement;
+  workspaceTree: HTMLDivElement;
+  workspaceUploadOverlay: HTMLDivElement;
+  workspaceUploadFileChoiceBtn: HTMLButtonElement;
+  workspaceUploadFolderChoiceBtn: HTMLButtonElement;
+  workspaceUploadCancelBtn: HTMLButtonElement;
+  editorSurface: HTMLDivElement;
+  filePreviewPane: HTMLDivElement;
+  filePreviewMeta: HTMLDivElement;
+  filePreviewBody: HTMLDivElement;
   findBar: HTMLDivElement;
   findInput: HTMLInputElement;
   findCount: HTMLSpanElement;
@@ -88,9 +109,14 @@ export type DomRefs = {
   historyRestoreBtn: HTMLButtonElement;
   shareWarnOverlay: HTMLDivElement;
   shareWarnText: HTMLDivElement;
+  shareWarnHint: HTMLDivElement;
   shareWarnCancelBtn: HTMLButtonElement;
   shareWarnDownloadBtn: HTMLButtonElement;
   shareWarnConfirmBtn: HTMLButtonElement;
+  projectImportOverlay: HTMLDivElement;
+  projectImportText: HTMLDivElement;
+  projectImportCancelBtn: HTMLButtonElement;
+  projectImportConfirmBtn: HTMLButtonElement;
   asyncWarnOverlay: HTMLDivElement;
   asyncWarnText: HTMLDivElement;
   asyncWarnCancelBtn: HTMLButtonElement;
@@ -122,6 +148,7 @@ export type DomRefs = {
   wrapToggle: HTMLInputElement;
   activeLineToggle: HTMLInputElement;
   splitToggle: HTMLInputElement;
+  workspaceFeatureToggle: HTMLInputElement;
   execTimeToggle: HTMLInputElement;
   themeAuto: HTMLInputElement;
   themeLight: HTMLInputElement;
@@ -144,8 +171,10 @@ export function getDomRefs(): DomRefs {
     runLabel: byId<HTMLSpanElement>("runLabel"),
     openBtn: byId<HTMLButtonElement>("openBtn"),
     saveBtn: byId<HTMLButtonElement>("saveBtn"),
+    workspaceToggleBtn: byId<HTMLButtonElement>("workspaceToggleBtn"),
     shareBtn: byId<HTMLButtonElement>("shareBtn"),
     fileInput: byId<HTMLInputElement>("fileInput"),
+    directoryInput: byId<HTMLInputElement>("directoryInput"),
     moreBtn: byId<HTMLButtonElement>("moreBtn"),
     moreMenu: byId<HTMLDivElement>("moreMenu"),
     shareMenuBtn: byId<HTMLButtonElement>("shareMenuBtn"),
@@ -162,7 +191,26 @@ export function getDomRefs(): DomRefs {
     editorActionsMenu: byId<HTMLDivElement>("editorActionsMenu"),
     renameTabBtn: byId<HTMLButtonElement>("renameTabBtn"),
     closeTabBtn: byId<HTMLButtonElement>("closeTabBtn"),
+    workspaceLayout: byId<HTMLDivElement>("workspaceLayout"),
     editorPane: byId<HTMLDivElement>("editorPane"),
+    workspacePane: byId<HTMLElement>("workspacePane"),
+    workspaceResizer: byId<HTMLDivElement>("workspaceResizer"),
+    workspaceNewBtn: byId<HTMLButtonElement>("workspaceNewBtn"),
+    workspaceUploadBtn: byId<HTMLButtonElement>("workspaceUploadBtn"),
+    workspaceRenameBtn: byId<HTMLButtonElement>("workspaceRenameBtn"),
+    workspaceDownloadBtn: byId<HTMLButtonElement>("workspaceDownloadBtn"),
+    workspaceDeleteBtn: byId<HTMLButtonElement>("workspaceDeleteBtn"),
+    workspaceCloseBtn: byId<HTMLButtonElement>("workspaceCloseBtn"),
+    workspaceMeta: byId<HTMLDivElement>("workspaceMeta"),
+    workspaceTree: byId<HTMLDivElement>("workspaceTree"),
+    workspaceUploadOverlay: byId<HTMLDivElement>("workspaceUploadOverlay"),
+    workspaceUploadFileChoiceBtn: byId<HTMLButtonElement>("workspaceUploadFileChoiceBtn"),
+    workspaceUploadFolderChoiceBtn: byId<HTMLButtonElement>("workspaceUploadFolderChoiceBtn"),
+    workspaceUploadCancelBtn: byId<HTMLButtonElement>("workspaceUploadCancelBtn"),
+    editorSurface: byId<HTMLDivElement>("editorSurface"),
+    filePreviewPane: byId<HTMLDivElement>("filePreviewPane"),
+    filePreviewMeta: byId<HTMLDivElement>("filePreviewMeta"),
+    filePreviewBody: byId<HTMLDivElement>("filePreviewBody"),
     findBar: byId<HTMLDivElement>("findBar"),
     findInput: byId<HTMLInputElement>("findInput"),
     findCount: byId<HTMLSpanElement>("findCount"),
@@ -218,9 +266,14 @@ export function getDomRefs(): DomRefs {
     historyRestoreBtn: byId<HTMLButtonElement>("historyRestoreBtn"),
     shareWarnOverlay: byId<HTMLDivElement>("shareWarnOverlay"),
     shareWarnText: byId<HTMLDivElement>("shareWarnText"),
+    shareWarnHint: byId<HTMLDivElement>("shareWarnHint"),
     shareWarnCancelBtn: byId<HTMLButtonElement>("shareWarnCancelBtn"),
     shareWarnDownloadBtn: byId<HTMLButtonElement>("shareWarnDownloadBtn"),
     shareWarnConfirmBtn: byId<HTMLButtonElement>("shareWarnConfirmBtn"),
+    projectImportOverlay: byId<HTMLDivElement>("projectImportOverlay"),
+    projectImportText: byId<HTMLDivElement>("projectImportText"),
+    projectImportCancelBtn: byId<HTMLButtonElement>("projectImportCancelBtn"),
+    projectImportConfirmBtn: byId<HTMLButtonElement>("projectImportConfirmBtn"),
     asyncWarnOverlay: byId<HTMLDivElement>("asyncWarnOverlay"),
     asyncWarnText: byId<HTMLDivElement>("asyncWarnText"),
     asyncWarnCancelBtn: byId<HTMLButtonElement>("asyncWarnCancelBtn"),
@@ -252,6 +305,7 @@ export function getDomRefs(): DomRefs {
     wrapToggle: byId<HTMLInputElement>("wrapToggle"),
     activeLineToggle: byId<HTMLInputElement>("activeLineToggle"),
     splitToggle: byId<HTMLInputElement>("splitToggle"),
+    workspaceFeatureToggle: byId<HTMLInputElement>("workspaceFeatureToggle"),
     execTimeToggle: byId<HTMLInputElement>("execTimeToggle"),
     themeAuto: byId<HTMLInputElement>("themeAuto"),
     themeLight: byId<HTMLInputElement>("themeLight"),

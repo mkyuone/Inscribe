@@ -21,6 +21,8 @@
     const PREFS_KEY = "inscribe_prefs_v5";
     let splitHorizontal = true;
     let theme = "system";
+    let workspaceFeatureEnabled = false;
+    let showWorkspaceSidebar = false;
 
     try {
       const raw = localStorage.getItem(PREFS_KEY);
@@ -31,6 +33,16 @@
         }
         if (typeof parsed?.theme === "string") {
           theme = parsed.theme;
+        }
+        if (typeof parsed?.workspaceFeatureEnabled === "boolean") {
+          workspaceFeatureEnabled = parsed.workspaceFeatureEnabled;
+        } else if (typeof parsed?.showWorkspaceSidebar === "boolean") {
+          workspaceFeatureEnabled = parsed.showWorkspaceSidebar;
+        }
+        if (typeof parsed?.showWorkspaceSidebar === "boolean") {
+          showWorkspaceSidebar = parsed.showWorkspaceSidebar;
+        } else if (typeof parsed?.workspaceFeatureEnabled === "boolean") {
+          showWorkspaceSidebar = parsed.workspaceFeatureEnabled;
         }
       }
     } catch {
@@ -44,6 +56,9 @@
       theme === "system" ? (prefersDark ? "dark" : "light") : theme === "dark" ? "dark" : "light";
 
     document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.dataset.workspaceFeature = workspaceFeatureEnabled ? "on" : "off";
+    document.documentElement.dataset.workspaceSidebar =
+      workspaceFeatureEnabled && showWorkspaceSidebar ? "on" : "off";
     const themeColor = document.querySelector('meta[name="theme-color"]');
     if (themeColor) {
       themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
@@ -165,16 +180,21 @@
             </div>
           </div>
 
-          <button class="toolBtn collapse" id="openBtn" type="button" title="Open (Cmd/Ctrl + O)" aria-label="Open file">
+          <button class="toolBtn collapse" id="openBtn" type="button" title="Open file (Cmd/Ctrl + O)" aria-label="Open file">
             <span class="material-icons" aria-hidden="true">folder_open</span>
             <span class="toolLabel">Open</span>
             <span class="hintPill" id="hintOpen">⌘ O</span>
           </button>
 
-          <button class="toolBtn collapse" id="saveBtn" type="button" title="Save (Cmd/Ctrl + S)" aria-label="Save file">
+          <button class="toolBtn collapse" id="saveBtn" type="button" title="Save file (Cmd/Ctrl + S)" aria-label="Save file">
             <span class="material-icons" aria-hidden="true">save</span>
             <span class="toolLabel">Save</span>
             <span class="hintPill" id="hintSave">⌘ S</span>
+          </button>
+
+          <button class="toolBtn collapse" id="workspaceToggleBtn" type="button" title="Show workspace sidebar" aria-label="Toggle workspace sidebar" aria-pressed="false">
+            <span class="material-icons" aria-hidden="true">folder_copy</span>
+            <span class="toolLabel">Workspace</span>
           </button>
 
           <button class="toolBtn collapse" id="shareBtn" type="button" title="Share link" aria-label="Share link">
@@ -230,7 +250,8 @@
             </div>
           </div>
 
-          <input type="file" id="fileInput" style="display:none;" accept=".py,.txt"/>
+          <input type="file" id="fileInput" style="display:none;" multiple />
+          <input type="file" id="directoryInput" style="display:none;" multiple webkitdirectory directory />
         </div>
       </div>
     </header>
@@ -249,7 +270,43 @@
     </div>
 
     <main>
-      <div class="split" id="splitPane">
+      <div class="workspaceLayout" id="workspaceLayout">
+        <aside class="pane workspacePane" id="workspacePane" aria-label="Workspace files">
+          <div class="workspacePaneHeader">
+            <div class="workspacePaneHeaderTop">
+              <div class="workspacePaneTitle">
+                <span class="material-icons" aria-hidden="true">folder_copy</span>
+                <span>Workspace</span>
+              </div>
+              <button class="iconBtn" id="workspaceCloseBtn" type="button" title="Hide workspace sidebar">
+                <span class="material-icons" aria-hidden="true">left_panel_close</span>
+              </button>
+            </div>
+            <div class="workspaceActions">
+              <button class="iconBtn" id="workspaceNewBtn" type="button" title="New workspace file">
+                <span class="material-icons" aria-hidden="true">note_add</span>
+              </button>
+              <button class="iconBtn" id="workspaceUploadBtn" type="button" title="Upload to workspace">
+                <span class="material-icons" aria-hidden="true">upload_file</span>
+              </button>
+              <button class="iconBtn" id="workspaceRenameBtn" type="button" title="Rename active file">
+                <span class="material-icons" aria-hidden="true">drive_file_rename_outline</span>
+              </button>
+              <button class="iconBtn" id="workspaceDownloadBtn" type="button" title="Download active file">
+                <span class="material-icons" aria-hidden="true">download</span>
+              </button>
+              <button class="iconBtn danger" id="workspaceDeleteBtn" type="button" title="Remove active file">
+                <span class="material-icons" aria-hidden="true">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="workspaceMeta" id="workspaceMeta">1 file</div>
+          <div class="workspaceList" id="workspaceTree" role="tree" aria-label="Workspace files"></div>
+        </aside>
+
+        <div class="resizer workspaceResizer" id="workspaceResizer" role="separator" aria-orientation="vertical"></div>
+
+        <div class="split" id="splitPane">
         <section class="pane editorPane" id="editorPane">
           <div class="paneHeader">
             <div class="paneLeft">
@@ -298,37 +355,47 @@
               </div>
             </div>
           </div>
-          <div class="findBar" id="findBar" role="region" aria-label="Find and replace">
-            <div class="findRow">
-              <span class="material-icons" aria-hidden="true">search</span>
-              <input class="findField" id="findInput" type="text" placeholder="Find" autocomplete="off" spellcheck="false" />
-              <span class="findCount" id="findCount">0 / 0</span>
-              <button class="toolBtn findModeBtn" id="findReplaceModeBtn" type="button" aria-pressed="false">Replace</button>
-              <button class="iconBtn findIconBtn" id="findPrevBtn" type="button" title="Previous match (Shift + Enter)">
-                <span class="material-icons" aria-hidden="true">keyboard_arrow_up</span>
-              </button>
-              <button class="iconBtn findIconBtn" id="findNextBtn" type="button" title="Next match (Enter)">
-                <span class="material-icons" aria-hidden="true">keyboard_arrow_down</span>
-              </button>
-              <button class="iconBtn findIconBtn" id="findCloseBtn" type="button" title="Close find">
-                <span class="material-icons" aria-hidden="true">close</span>
-              </button>
+          <div class="editorSurface" id="editorSurface">
+            <div class="findBar" id="findBar" role="region" aria-label="Find and replace">
+              <div class="findRow">
+                <span class="material-icons" aria-hidden="true">search</span>
+                <input class="findField" id="findInput" type="text" placeholder="Find" autocomplete="off" spellcheck="false" />
+                <span class="findCount" id="findCount">0 / 0</span>
+                <button class="toolBtn findModeBtn" id="findReplaceModeBtn" type="button" aria-pressed="false">Replace</button>
+                <button class="iconBtn findIconBtn" id="findPrevBtn" type="button" title="Previous match (Shift + Enter)">
+                  <span class="material-icons" aria-hidden="true">keyboard_arrow_up</span>
+                </button>
+                <button class="iconBtn findIconBtn" id="findNextBtn" type="button" title="Next match (Enter)">
+                  <span class="material-icons" aria-hidden="true">keyboard_arrow_down</span>
+                </button>
+                <button class="iconBtn findIconBtn" id="findCloseBtn" type="button" title="Close find">
+                  <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+              </div>
+              <div class="findRow replaceRow" id="replaceRow">
+                <span class="material-icons" aria-hidden="true">swap_horiz</span>
+                <input class="findField" id="replaceInput" type="text" placeholder="Replace with" autocomplete="off" spellcheck="false" />
+                <button class="toolBtn" id="replaceBtn" type="button">Replace</button>
+                <button class="toolBtn" id="replaceAllBtn" type="button">Replace All</button>
+              </div>
+              <div class="findOpts">
+                <button class="findOptBtn" id="findCaseToggle" type="button" aria-pressed="false">Match case</button>
+                <button class="findOptBtn" id="findWordToggle" type="button" aria-pressed="false">Whole word</button>
+                <button class="findOptBtn" id="findRegexToggle" type="button" aria-pressed="false">Regex</button>
+                <span class="findStatus" id="findStatus" role="status" aria-live="polite"></span>
+              </div>
             </div>
-            <div class="findRow replaceRow" id="replaceRow">
-              <span class="material-icons" aria-hidden="true">swap_horiz</span>
-              <input class="findField" id="replaceInput" type="text" placeholder="Replace with" autocomplete="off" spellcheck="false" />
-              <button class="toolBtn" id="replaceBtn" type="button">Replace</button>
-              <button class="toolBtn" id="replaceAllBtn" type="button">Replace All</button>
+
+            <div class="filePreviewPane" id="filePreviewPane" hidden>
+              <div class="filePreviewHeader">
+                <div class="filePreviewTitle">Preview</div>
+                <div class="filePreviewMeta" id="filePreviewMeta">Preview</div>
+              </div>
+              <div class="filePreviewBody" id="filePreviewBody"></div>
             </div>
-            <div class="findOpts">
-              <button class="findOptBtn" id="findCaseToggle" type="button" aria-pressed="false">Match case</button>
-              <button class="findOptBtn" id="findWordToggle" type="button" aria-pressed="false">Whole word</button>
-              <button class="findOptBtn" id="findRegexToggle" type="button" aria-pressed="false">Regex</button>
-              <span class="findStatus" id="findStatus" role="status" aria-live="polite"></span>
-            </div>
+            <textarea id="editor" aria-label="Python code editor">print("Hello, World!")</textarea>
+            <div class="editorStatus" id="editorStatus" aria-live="off">Ln 1, Col 1</div>
           </div>
-          <textarea id="editor" aria-label="Python code editor">print("Hello, World!")</textarea>
-          <div class="editorStatus" id="editorStatus" aria-live="off">Ln 1, Col 1</div>
         </section>
 
         <div class="resizer" id="dragbar" role="separator" aria-orientation="horizontal"></div>
@@ -360,12 +427,15 @@
             </div>
           </div>
         </section>
+        </div>
       </div>
     </main>
 
     <div class="toastViewport" aria-live="polite" aria-atomic="false">
       <div class="toast" id="shareToast" role="status" aria-live="polite" hidden>
-        <span class="material-icons" id="shareToastIcon" aria-hidden="true">check_circle</span>
+        <span class="toastIcon" aria-hidden="true">
+          <span class="material-icons" id="shareToastIcon">check_circle</span>
+        </span>
         <div class="toastText">
           <div class="toastTitle" id="shareToastTitle">Shared code loaded</div>
           <div class="toastDesc" id="shareToastDesc">This editor opened code from a share link.</div>
@@ -373,7 +443,9 @@
       </div>
 
       <div class="toast" id="sysToast" role="status" aria-live="polite" hidden>
-        <span class="material-icons" id="sysToastIcon" aria-hidden="true">check_circle</span>
+        <span class="toastIcon" aria-hidden="true">
+          <span class="material-icons" id="sysToastIcon">check_circle</span>
+        </span>
         <div class="toastText">
           <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
           <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
@@ -499,6 +571,13 @@ View the full license text on GitHub:
               </label>
             </div>
             <div class="settingsNote">Place editor and console side-by-side.</div>
+            <div class="settingsRow">
+              <label class="settingsLabel toggle" for="workspaceFeatureToggle">
+                <input id="workspaceFeatureToggle" type="checkbox" />
+                <span>Workspace projects</span>
+              </label>
+            </div>
+            <div class="settingsNote">Turn on workspace files, folders, uploads, previews, and .inscribeproj save/open.</div>
           </div>
 
           <div class="settingsSection">
@@ -664,6 +743,52 @@ View the full license text on GitHub:
 
   <div class="exportRoot" id="exportRoot" aria-hidden="true"></div>
 
+  <div class="overlay" id="workspaceUploadOverlay" role="dialog" aria-modal="true" aria-labelledby="workspaceUploadTitle">
+    <div class="modal modalWorkspaceUpload">
+      <h2 id="workspaceUploadTitle">Add to Workspace</h2>
+      <p>Choose whether you want to bring in one or more files, or import a whole folder.</p>
+
+      <div class="workspaceUploadChoices">
+        <button class="workspaceUploadChoice" id="workspaceUploadFileChoiceBtn" type="button">
+          <span class="material-icons" aria-hidden="true">upload_file</span>
+          <span class="workspaceUploadChoiceText">
+            <strong>Files</strong>
+            <span>Add individual files to the current workspace.</span>
+          </span>
+        </button>
+        <button class="workspaceUploadChoice" id="workspaceUploadFolderChoiceBtn" type="button">
+          <span class="material-icons" aria-hidden="true">drive_folder_upload</span>
+          <span class="workspaceUploadChoiceText">
+            <strong>Folder</strong>
+            <span>Import a folder and keep its internal structure.</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="workspaceUploadCancelBtn" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="projectImportOverlay" role="dialog" aria-modal="true" aria-labelledby="projectImportTitle">
+    <div class="modal modalSettings">
+      <div class="warnBlock">
+        <span class="material-icons" aria-hidden="true">warning</span>
+        <div>
+          <h2 id="projectImportTitle">Replace Current Workspace?</h2>
+          <div class="warnText" id="projectImportText">Importing this project file will replace the current workspace.</div>
+          <div class="warnHint">Your current open files will stay local until you choose to replace them.</div>
+        </div>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="projectImportCancelBtn" type="button">Cancel</button>
+        <button class="toolBtn primary" id="projectImportConfirmBtn" type="button">Replace workspace</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Long URL warning modal -->
   <div class="overlay" id="shareWarnOverlay" role="dialog" aria-modal="true" aria-labelledby="shareWarnTitle">
     <div class="modal modalSettings">
@@ -672,13 +797,13 @@ View the full license text on GitHub:
         <div>
           <h2 id="shareWarnTitle">Share Link Warning</h2>
           <div class="warnText" id="shareWarnText">This link is long. Continue anyway?</div>
-          <div class="warnHint">Tip: download a .py file instead to avoid very long URLs.</div>
+          <div class="warnHint" id="shareWarnHint">Tip: download an .inscribeproj file instead to avoid very long URLs.</div>
         </div>
       </div>
 
       <div class="modalRow">
         <button class="toolBtn" id="shareWarnCancelBtn" type="button">Cancel</button>
-        <button class="toolBtn" id="shareWarnDownloadBtn" type="button">Download .py</button>
+        <button class="toolBtn" id="shareWarnDownloadBtn" type="button">Download project</button>
         <button class="toolBtn primary" id="shareWarnConfirmBtn" type="button">Copy anyway</button>
       </div>
     </div>

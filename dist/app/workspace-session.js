@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2026 Mark Yu
 import { LS_KEYS } from "../constants.js";
 import { safeLS } from "../utils/storage.js";
+import { guessMimeType, isTextPath, normalizeWorkspacePath } from "./workspace-files.js";
 const DB_NAME = "inscribe-workspace";
 const DB_VERSION = 1;
 const STORE_WORKSPACE = "workspace";
@@ -39,7 +40,7 @@ function openDb() {
 }
 export function sanitizeFilename(name) {
     const trimmed = name.trim();
-    return trimmed || "untitled.py";
+    return trimmed ? normalizeWorkspacePath(trimmed) || "untitled.py" : "untitled.py";
 }
 function normalizeTabDoc(tab) {
     if (!tab ||
@@ -50,12 +51,21 @@ function normalizeTabDoc(tab) {
         typeof tab.dirty !== "boolean") {
         return null;
     }
+    const name = sanitizeFilename(tab.name);
+    const mime = guessMimeType(name, typeof tab.mime === "string" ? tab.mime : "");
+    const encoding = tab.encoding === "base64" || tab.encoding === "utf8"
+        ? tab.encoding
+        : isTextPath(name, mime)
+            ? "utf8"
+            : "base64";
     return {
         id: tab.id,
-        name: sanitizeFilename(tab.name),
+        name,
         content: tab.content,
         savedContent: tab.savedContent,
-        dirty: tab.dirty
+        dirty: tab.dirty,
+        mime,
+        encoding
     };
 }
 function normalizeStoredState(parsed) {
@@ -91,7 +101,9 @@ function persistLegacyWorkspaceState(state, savedAt) {
     if (!active)
         return;
     safeLS.set(LS_KEYS.FILENAME, active.name);
-    safeLS.set(LS_KEYS.DRAFT, active.content);
+    if (active.encoding !== "base64") {
+        safeLS.set(LS_KEYS.DRAFT, active.content);
+    }
 }
 export function parseStoredTabsState(raw) {
     var _a, _b;

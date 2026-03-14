@@ -10,6 +10,31 @@ async function waitForEditor(page) {
   await waitForEditorSurface(page);
 }
 
+async function enableWorkspaceFeature(page) {
+  if (await page.locator("#workspaceToggleBtn").isVisible()) {
+    return;
+  }
+
+  await page.click("#moreBtn");
+  await page.click("#settingsBtn");
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
+  await page.click("#workspaceFeatureToggle");
+  await expect(page.locator("#workspaceToggleBtn")).toBeVisible();
+  await expect(page.locator("#workspacePane")).toBeVisible();
+  await page.click("#closeSettingsBtn");
+}
+
+async function showWorkspace(page) {
+  await enableWorkspaceFeature(page);
+
+  if (!(await page.locator("#workspacePane").isVisible())) {
+    await page.click("#workspaceToggleBtn");
+  }
+  await expect(page.locator("#workspacePane")).toBeVisible();
+}
+
 async function setEditorValue(page, value) {
   await page.evaluate((nextValue) => {
     const cmElement = document.querySelector(".CodeMirror");
@@ -44,6 +69,8 @@ test("loads with startup banner and active-line highlight", async ({ page }) => 
   });
 
   await waitForEditor(page);
+  await expect(page.locator("#workspacePane")).toBeHidden();
+  await expect(page.locator("#workspaceToggleBtn")).toBeHidden();
 
   const activeLine = page.locator(".CodeMirror-activeline-background");
   await expect(activeLine).toHaveCount(1);
@@ -68,6 +95,12 @@ test("loads with startup banner and active-line highlight", async ({ page }) => 
   await page.click("#moreBtn");
   await page.click("#settingsBtn");
   await expect(page.locator("#settingsOverlay")).toHaveClass(/active/);
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
+  await page.click("#workspaceFeatureToggle");
+  await expect(page.locator("#workspaceToggleBtn")).toBeVisible();
+  await expect(page.locator("#workspacePane")).toBeVisible();
   await page.click("#activeLineToggle");
   await expect(page.locator("html")).toHaveAttribute("data-active-line", "off");
   await page.click("#closeSettingsBtn");
@@ -167,4 +200,87 @@ test("history restore asks for confirmation", async ({ page }) => {
   await expect
     .poll(() => dialogMessage.includes("Restore this snapshot?"))
     .toBeTruthy();
+});
+
+test("runs active file with workspace imports and generated files", async ({ page }) => {
+  await waitForEditor(page);
+  await waitForPyodideReady(page);
+  await showWorkspace(page);
+
+  await page.setInputFiles("#fileInput", [
+    {
+      name: "main.py",
+      mimeType: "text/x-python",
+      buffer: Buffer.from(
+        "from pathlib import Path\n" +
+          "from helper import double\n" +
+          "import json\n\n" +
+          "here = Path(__file__)\n" +
+          "Path('artifacts').mkdir(exist_ok=True)\n" +
+          "Path('artifacts/result.json').write_text(json.dumps({'file': here.name, 'value': double(3)}), encoding='utf-8')\n" +
+          "print(here.name)\n" +
+          "print(double(3))\n"
+      )
+    },
+    {
+      name: "helper.py",
+      mimeType: "text/x-python",
+      buffer: Buffer.from("def double(x):\n    return x * 2\n")
+    }
+  ]);
+
+  await page.locator('.workspaceFile .workspaceLabel', { hasText: "main.py" }).click();
+  await page.click("#runBtn");
+  await expect(page.locator("#console")).toContainText("main.py", { timeout: 30000 });
+  await expect(page.locator("#console")).toContainText("6", { timeout: 30000 });
+  await expect(page.locator("#sysToast")).toContainText("Workspace updated", { timeout: 30000 });
+
+  await page.locator('.workspaceFile .workspaceLabel', { hasText: "result.json" }).click();
+  await expect(page.locator("#filePreviewPane")).toBeVisible();
+  await expect(page.locator("#filePreviewBody")).toContainText('"file": "main.py"');
+  await expect(page.locator("#filePreviewBody")).toContainText('"value": 6');
+});
+
+test("shows formatted preview for JSON workspace files", async ({ page }) => {
+  await waitForEditor(page);
+  await showWorkspace(page);
+
+  await page.setInputFiles("#fileInput", [
+    {
+      name: "data.json",
+      mimeType: "application/json",
+      buffer: Buffer.from('{"alpha":1,"beta":[2,3]}')
+    }
+  ]);
+
+  await expect(page.locator("#filePreviewPane")).toBeVisible();
+  await expect(page.locator("#filePreviewBody")).toContainText('"alpha": 1');
+  await expect(page.locator("#filePreviewBody")).toContainText('"beta": [');
+});
+
+test("workspace upload modal opens and file rows rename inline", async ({ page }) => {
+  await waitForEditor(page);
+  await showWorkspace(page);
+
+  await page.click("#workspaceUploadBtn");
+  await expect(page.locator("#workspaceUploadOverlay")).toHaveClass(/active/);
+  await page.click("#workspaceUploadCancelBtn");
+  await expect(page.locator("#workspaceUploadOverlay")).not.toHaveClass(/active/);
+
+  await page.setInputFiles("#fileInput", [
+    {
+      name: "notes.py",
+      mimeType: "text/x-python",
+      buffer: Buffer.from("print('notes')\n")
+    }
+  ]);
+
+  await page.locator('.workspaceFile .workspaceLabel', { hasText: "notes.py" }).dblclick();
+  const renameInput = page.locator('.workspaceRenameInput[data-tab-id]');
+  await expect(renameInput).toBeVisible();
+  await renameInput.fill("renamed.py");
+  await renameInput.press("Enter");
+
+  await expect(page.locator('.workspaceFile .workspaceLabel', { hasText: "renamed.py" })).toBeVisible();
+  await expect(page.locator(".tabName", { hasText: "renamed.py" })).toBeVisible();
 });

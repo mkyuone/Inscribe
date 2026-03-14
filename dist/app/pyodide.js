@@ -3,7 +3,89 @@
 import { formatDuration } from "../utils/time.js";
 import { APP_BANNER } from "../app-meta.js";
 import { BUILD_TIME } from "../version.js";
-export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onVariables, onRunFinished) {
+function normalizeWorkspacePath(path) {
+    const parts = String(path || "")
+        .replaceAll("\\", "/")
+        .split("/");
+    const sanitized = [];
+    for (const rawPart of parts) {
+        const part = rawPart.trim();
+        if (!part || part === ".")
+            continue;
+        if (part === ".." || part.includes("\0"))
+            return "";
+        sanitized.push(part);
+    }
+    return sanitized.join("/");
+}
+function base64ToBytes(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+function bytesToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+}
+function toWorkerWorkspaceSnapshot(activePath, files) {
+    const sanitizedFiles = [];
+    for (const file of files) {
+        const path = normalizeWorkspacePath(file.path);
+        if (!path)
+            continue;
+        if (file.encoding === "base64") {
+            sanitizedFiles.push({
+                path,
+                mime: file.mime || "",
+                kind: "binary",
+                bytes: base64ToBytes(file.content)
+            });
+            continue;
+        }
+        sanitizedFiles.push({
+            path,
+            mime: file.mime || "",
+            kind: "text",
+            text: file.content
+        });
+    }
+    return {
+        activePath: normalizeWorkspacePath(activePath),
+        files: sanitizedFiles
+    };
+}
+function fromWorkerWorkspaceFiles(files) {
+    const nextFiles = [];
+    for (const file of files || []) {
+        const path = normalizeWorkspacePath(file.path);
+        if (!path)
+            continue;
+        if (file.kind === "binary") {
+            nextFiles.push({
+                path,
+                mime: file.mime || "",
+                encoding: "base64",
+                content: bytesToBase64(file.bytes)
+            });
+            continue;
+        }
+        nextFiles.push({
+            path,
+            mime: file.mime || "",
+            encoding: "utf8",
+            content: file.text
+        });
+    }
+    return nextFiles;
+}
+export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getWorkspaceFiles, getActiveFilename, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onVariables, onWorkspaceFiles, onRunFinished) {
     const inputMaxBytes = 64 * 1024;
     const supportsBlockingInput = typeof SharedArrayBuffer !== "undefined" && window.crossOriginIsolated === true;
     let worker = null;
@@ -71,6 +153,34 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
     }
     function setReady(ready) {
         state.pyodideReady = ready;
+        updateStatusBar();
+    }
+    function disposeWorker() {
+        if (worker) {
+            try {
+                postToWorker({ type: "reset" });
+            }
+            catch {
+                // ignore worker teardown errors
+            }
+            worker.terminate();
+            worker = null;
+        }
+        stdinSab = null;
+        stdinI32 = null;
+        stdinU8 = null;
+        interruptSab = null;
+        interruptI32 = null;
+    }
+    function handleFatalMemoryExhaustion() {
+        disposeWorker();
+        resetStdoutBuffer();
+        setReady(false);
+        onVariables({ items: [], truncated: false });
+        addConsoleLine("Pyodide ran out of memory and was restarted. Run again to continue.", {
+            dim: true,
+            system: true
+        });
         updateStatusBar();
     }
     function postToWorker(message) {
@@ -181,6 +291,9 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             case "run-complete":
                 lastRunDurationMs =
                     typeof message.durationMs === "number" ? message.durationMs : null;
+                if (message.fatal === "memory") {
+                    handleFatalMemoryExhaustion();
+                }
                 if (runResolve) {
                     runResolve(message.ok);
                     runResolve = null;
@@ -190,21 +303,21 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             case "vars":
                 onVariables({ items: message.items || [], truncated: message.truncated });
                 break;
+            case "workspace-sync":
+                onWorkspaceFiles(fromWorkerWorkspaceFiles(message.sync.files || []), {
+                    activePath: normalizeWorkspacePath(message.sync.activePath),
+                    deletedPaths: (message.sync.deletedPaths || []).map((path) => normalizeWorkspacePath(path))
+                });
+                break;
+            case "workspace-files":
+                onWorkspaceFiles(message.files || []);
+                break;
             default:
                 break;
         }
     }
     function resetEnvironment() {
-        if (worker) {
-            postToWorker({ type: "reset" });
-            worker.terminate();
-            worker = null;
-        }
-        stdinSab = null;
-        stdinI32 = null;
-        stdinU8 = null;
-        interruptSab = null;
-        interruptI32 = null;
+        disposeWorker();
         resetStdoutBuffer();
         setReady(false);
         onVariables({ items: [], truncated: false });
@@ -263,7 +376,12 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             runCompletionPromise = new Promise((resolve) => {
                 runResolve = resolve;
             });
-            const runMessage = { type: "run", code };
+            const runMessage = {
+                type: "run",
+                code,
+                mode,
+                workspace: toWorkerWorkspaceSnapshot(getActiveFilename(), getWorkspaceFiles())
+            };
             postToWorker(runMessage);
             didRun = true;
             const ok = await runCompletionPromise;

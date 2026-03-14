@@ -7,12 +7,22 @@ export function createRefocusEditor(dom, editor) {
         [
             dom.openBtn,
             dom.saveBtn,
+            dom.workspaceToggleBtn,
             dom.shareBtn,
             dom.moreBtn,
             dom.runModeBtn,
             dom.editorActionsBtn,
             dom.varsToggleBtn,
-            dom.newTabBtn
+            dom.newTabBtn,
+            dom.workspaceNewBtn,
+            dom.workspaceUploadBtn,
+            dom.workspaceRenameBtn,
+            dom.workspaceDownloadBtn,
+            dom.workspaceDeleteBtn,
+            dom.workspaceCloseBtn,
+            dom.workspaceUploadFileChoiceBtn,
+            dom.workspaceUploadFolderChoiceBtn,
+            dom.workspaceUploadCancelBtn
         ].forEach((b) => b && b.blur());
         requestAnimationFrame(() => editor.focus());
     };
@@ -29,6 +39,15 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     }
     function closeLicense() {
         dom.licenseOverlay.classList.remove("active");
+    }
+    function openWorkspaceUpload() {
+        closeMenu();
+        closeRunMenu();
+        closeEditorActions();
+        dom.workspaceUploadOverlay.classList.add("active");
+    }
+    function closeWorkspaceUpload() {
+        dom.workspaceUploadOverlay.classList.remove("active");
     }
     function openSettings() {
         closeShortcuts();
@@ -59,6 +78,7 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
     function closeAnyModal() {
         closeAbout();
         closeLicense();
+        closeWorkspaceUpload();
         closeSettings();
         closeShortcuts();
         closePrint();
@@ -127,8 +147,8 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         const shortcuts = [
             { keys: [mod, enterKey], desc: "Run (uses Run Mode config)" },
             { keys: [mod, "Shift", enterKey], desc: "Run current cell (# %%)" },
-            { keys: [mod, "S"], desc: "Save file" },
-            { keys: [mod, "O"], desc: "Open file" },
+            { keys: [mod, "S"], desc: "Save project" },
+            { keys: [mod, "O"], desc: "Open files or project" },
             { keys: [mod, "F"], desc: "Open Find" },
             { keys: [mod, "H"], desc: "Open Replace" },
             { keys: ["F3"], desc: "Next search match" },
@@ -241,6 +261,10 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             if (e.target === dom.licenseOverlay)
                 closeLicense();
         });
+        dom.workspaceUploadOverlay.addEventListener("click", (e) => {
+            if (e.target === dom.workspaceUploadOverlay)
+                closeWorkspaceUpload();
+        });
         dom.settingsOverlay.addEventListener("click", (e) => {
             if (e.target === dom.settingsOverlay)
                 closeSettings();
@@ -259,12 +283,21 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         });
     }
     function bindResizer() {
-        let dragging = false;
+        let dragging = null;
         let startY = 0;
         let startX = 0;
         let startSize = 0;
+        const isWorkspaceStacked = () => getComputedStyle(dom.workspaceLayout).flexDirection === "column";
+        const syncWorkspaceDimension = () => {
+            if (isWorkspaceStacked()) {
+                dom.workspacePane.style.width = "";
+            }
+            else {
+                dom.workspacePane.style.height = "";
+            }
+        };
         dom.resizer.addEventListener("mousedown", (e) => {
-            dragging = true;
+            dragging = "split";
             startY = e.clientY;
             startX = e.clientX;
             startSize = dom.splitPane.classList.contains("horizontal")
@@ -272,9 +305,41 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
                 : dom.editorPane.offsetHeight;
             e.preventDefault();
         });
+        dom.workspaceResizer.addEventListener("mousedown", (e) => {
+            if (dom.workspacePane.hidden)
+                return;
+            dragging = "workspace";
+            startY = e.clientY;
+            startX = e.clientX;
+            startSize = isWorkspaceStacked()
+                ? dom.workspacePane.offsetHeight
+                : dom.workspacePane.offsetWidth;
+            e.preventDefault();
+        });
         document.addEventListener("mousemove", (e) => {
             if (!dragging)
                 return;
+            if (dragging === "workspace") {
+                const stacked = isWorkspaceStacked();
+                const delta = stacked ? e.clientY - startY : e.clientX - startX;
+                const total = stacked ? dom.workspaceLayout.clientHeight : dom.workspaceLayout.clientWidth;
+                const min = stacked ? 120 : 210;
+                const cap = stacked ? 320 : 420;
+                const max = Math.max(min, Math.min(cap, total - (stacked ? 220 : 360)));
+                let next = startSize + delta;
+                if (next < min)
+                    next = min;
+                if (next > max)
+                    next = max;
+                if (stacked) {
+                    dom.workspacePane.style.height = `${next}px`;
+                }
+                else {
+                    dom.workspacePane.style.width = `${next}px`;
+                }
+                editor.refresh();
+                return;
+            }
             const horizontal = dom.splitPane.classList.contains("horizontal");
             const delta = horizontal ? e.clientX - startX : e.clientY - startY;
             const total = horizontal ? dom.splitPane.clientWidth : dom.splitPane.clientHeight;
@@ -294,14 +359,21 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             editor.refresh();
         });
         document.addEventListener("mouseup", () => {
-            dragging = false;
+            dragging = null;
         });
+        window.addEventListener("resize", () => {
+            syncWorkspaceDimension();
+            editor.refresh();
+        });
+        syncWorkspaceDimension();
     }
     return {
         openAbout,
         closeAbout,
         openLicense,
         closeLicense,
+        openWorkspaceUpload,
+        closeWorkspaceUpload,
         openSettings,
         closeSettings,
         openShortcuts,

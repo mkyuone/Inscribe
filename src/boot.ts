@@ -71,7 +71,11 @@ function applyStartupShellPrefs() {
   const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
   const resolvedTheme =
     prefs.theme === "system" ? (themeMedia.matches ? "dark" : "light") : prefs.theme;
+  const workspaceFeatureEnabled = !!prefs.workspaceFeatureEnabled;
+  const workspaceVisible = workspaceFeatureEnabled && !!prefs.showWorkspaceSidebar;
   document.documentElement.dataset.theme = resolvedTheme;
+  document.documentElement.dataset.workspaceFeature = workspaceFeatureEnabled ? "on" : "off";
+  document.documentElement.dataset.workspaceSidebar = workspaceVisible ? "on" : "off";
 
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) {
@@ -306,13 +310,18 @@ export async function boot() {
   const fileCtrl = createFileController(
     dom,
     {
-      onOpenFileText: (filename, content) => {
-        tabsCtrl?.openFileAsTab(filename, content);
+      isWorkspaceEnabled: () => !!prefs.workspaceFeatureEnabled,
+      importFiles: (files, opts) => {
+        tabsCtrl?.importFiles(files, opts);
       },
-      getActiveFilename: () => tabsCtrl?.getActiveFilename() || "untitled.py",
-      getActiveContent: () => tabsCtrl?.getActiveContent() || editorCtrl.getValue(),
+      getAllFiles: () => tabsCtrl?.getAllFiles() || [],
+      getActiveFile: () => tabsCtrl?.getActiveFile() || null,
       onSaved: (name) => {
-        tabsCtrl?.markActiveSaved();
+        if (prefs.workspaceFeatureEnabled) {
+          tabsCtrl?.markAllSaved();
+        } else {
+          tabsCtrl?.markActiveSaved();
+        }
         setFilenameStatus(name, dom);
         editorCtrl.markSaved();
       },
@@ -438,6 +447,14 @@ export async function boot() {
     () => updateStatusBar(state, dom),
     refocusEditor,
     editorCtrl.getCodeForMode,
+    () =>
+      (tabsCtrl?.getAllFiles() || []).map((file) => ({
+        path: file.name,
+        mime: file.mime || "",
+        encoding: file.encoding || "utf8",
+        content: file.content
+      })),
+    () => tabsCtrl?.getActiveFilename() || "untitled.py",
     getRunModeLabel,
     dom.runBtn,
     dom.runModeBtn,
@@ -456,6 +473,32 @@ export async function boot() {
     ({ items, truncated }) => {
       varsCtrl.setVariables(items, truncated);
     },
+    (files, sync) => {
+      const summary = tabsCtrl?.applyRuntimeWorkspace(files, sync);
+      if (!summary) return;
+
+      const parts: string[] = [];
+      if (summary.added) parts.push(`${summary.added} new`);
+      if (summary.updated) parts.push(`${summary.updated} updated`);
+      if (summary.removed) parts.push(`${summary.removed} removed`);
+
+      if (summary.createdFallback) {
+        notifySystem(
+          "Workspace cleared",
+          "Your program removed every workspace file, so Inscribe opened a new blank file to keep editing available.",
+          "note_add"
+        );
+        return;
+      }
+
+      if (parts.length) {
+        notifySystem(
+          "Workspace updated",
+          `Your program changed the workspace: ${parts.join(", ")}.`,
+          "folder"
+        );
+      }
+    },
     ({ stdout, interrupted }) => {
       if (!stdout || !stdout.trim()) return;
       const now = Date.now();
@@ -472,7 +515,8 @@ export async function boot() {
     () => editorCtrl.getValue(),
     consoleApi.addLine,
     () => fileCtrl.saveFile(),
-    refocusEditor
+    refocusEditor,
+    () => !!prefs.workspaceFeatureEnabled
   );
 
   dom.aboutVersion.textContent = `v${APP_VERSION}`;
@@ -500,9 +544,33 @@ export async function boot() {
     refocusEditor();
   }
 
+  function setWorkspaceSidebarVisible(visible: boolean, opts?: { quiet?: boolean }) {
+    if (!prefs.workspaceFeatureEnabled) {
+      prefs.showWorkspaceSidebar = false;
+      savePrefs(prefs);
+      applyPrefs(prefs, editorCtrl.editor, dom);
+      return;
+    }
+    prefs.showWorkspaceSidebar = visible;
+    savePrefs(prefs);
+    applyPrefs(prefs, editorCtrl.editor, dom);
+    if (!opts?.quiet) {
+      notifySystem(
+        "Workspace sidebar",
+        visible ? "Shown" : "Hidden",
+        visible ? "left_panel_open" : "left_panel_close"
+      );
+    }
+  }
+
   dom.runBtn.addEventListener("click", runDefault);
   dom.runModeBtn.addEventListener("click", ui.toggleRunMenu);
   dom.editorActionsBtn.addEventListener("click", ui.toggleEditorActions);
+  dom.workspaceToggleBtn.addEventListener("click", () => {
+    if (!prefs.workspaceFeatureEnabled) return;
+    setWorkspaceSidebarVisible(!prefs.showWorkspaceSidebar);
+    refocusEditor();
+  });
 
   dom.runAllBtn.addEventListener("click", () => {
     setRunMode("all", dom, (next) => {
@@ -528,6 +596,36 @@ export async function boot() {
 
   dom.openBtn.addEventListener("click", () => fileCtrl.openFile());
   dom.saveBtn.addEventListener("click", saveWithHistory);
+  dom.workspaceNewBtn.addEventListener("click", () => {
+    tabsCtrl?.createNewTab();
+  });
+  dom.workspaceUploadBtn.addEventListener("click", () => {
+    ui.openWorkspaceUpload();
+  });
+  dom.workspaceUploadFileChoiceBtn.addEventListener("click", () => {
+    ui.closeWorkspaceUpload();
+    fileCtrl.openWorkspaceFiles();
+  });
+  dom.workspaceUploadFolderChoiceBtn.addEventListener("click", () => {
+    ui.closeWorkspaceUpload();
+    fileCtrl.openFolder();
+  });
+  dom.workspaceUploadCancelBtn.addEventListener("click", () => {
+    ui.closeWorkspaceUpload();
+    refocusEditor();
+  });
+  dom.workspaceRenameBtn.addEventListener("click", () => {
+    tabsCtrl?.renameActiveTab("workspace");
+  });
+  dom.workspaceDownloadBtn.addEventListener("click", () => fileCtrl.downloadActiveFile());
+  dom.workspaceDeleteBtn.addEventListener("click", () => {
+    tabsCtrl?.closeActiveTab();
+    refocusEditor();
+  });
+  dom.workspaceCloseBtn.addEventListener("click", () => {
+    setWorkspaceSidebarVisible(false);
+    refocusEditor();
+  });
   dom.shareBtn.addEventListener("click", () => {
     void shareCtrl.shareCode();
   });

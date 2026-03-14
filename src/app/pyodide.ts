@@ -4,6 +4,7 @@
 import { formatDuration } from "../utils/time.js";
 import { APP_BANNER } from "../app-meta.js";
 import { AppState, RunMode } from "./types.js";
+import type { RuntimeWorkspaceFile } from "./tabs.js";
 import type { VariableItem } from "./variables.js";
 import { BUILD_TIME } from "../version.js";
 
@@ -24,6 +25,8 @@ type WorkerInitMessage = {
 type WorkerRunMessage = {
   type: "run";
   code: string;
+  mode: RunMode;
+  workspace: WorkerWorkspaceSnapshot;
 };
 
 type WorkerResetMessage = {
@@ -38,9 +41,28 @@ type WorkerStdoutMessage = { type: "stdout"; text: string };
 type WorkerStdoutFlushMessage = { type: "stdout-flush" };
 type WorkerInputRequestMessage = { type: "input"; prompt: string };
 type WorkerErrorLineMessage = { type: "error-line"; text: string };
-type WorkerRunCompleteMessage = { type: "run-complete"; ok: boolean; durationMs?: number };
+type WorkerRunCompleteMessage = {
+  type: "run-complete";
+  ok: boolean;
+  durationMs?: number;
+  fatal?: "memory";
+};
 type WorkerInterruptedMessage = { type: "interrupted" };
 type WorkerVarsMessage = { type: "vars"; items: VariableItem[]; truncated?: boolean };
+type WorkerWorkspaceSnapshotFile =
+  | { path: string; mime: string; kind: "text"; text: string }
+  | { path: string; mime: string; kind: "binary"; bytes: Uint8Array };
+type WorkerWorkspaceSnapshot = {
+  activePath: string;
+  files: WorkerWorkspaceSnapshotFile[];
+};
+type WorkerWorkspaceSync = {
+  activePath: string;
+  files: WorkerWorkspaceSnapshotFile[];
+  deletedPaths: string[];
+};
+type WorkerWorkspaceFilesMessage = { type: "workspace-files"; files: RuntimeWorkspaceFile[] };
+type WorkerWorkspaceSyncMessage = { type: "workspace-sync"; sync: WorkerWorkspaceSync };
 
 type WorkerInboundMessage =
   | WorkerReadyMessage
@@ -51,7 +73,95 @@ type WorkerInboundMessage =
   | WorkerErrorLineMessage
   | WorkerRunCompleteMessage
   | WorkerInterruptedMessage
-  | WorkerVarsMessage;
+  | WorkerVarsMessage
+  | WorkerWorkspaceFilesMessage
+  | WorkerWorkspaceSyncMessage;
+
+function normalizeWorkspacePath(path: string) {
+  const parts = String(path || "")
+    .replaceAll("\\", "/")
+    .split("/");
+  const sanitized: string[] = [];
+  for (const rawPart of parts) {
+    const part = rawPart.trim();
+    if (!part || part === ".") continue;
+    if (part === ".." || part.includes("\0")) return "";
+    sanitized.push(part);
+  }
+  return sanitized.join("/");
+}
+
+function base64ToBytes(base64: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function toWorkerWorkspaceSnapshot(
+  activePath: string,
+  files: RuntimeWorkspaceFile[]
+): WorkerWorkspaceSnapshot {
+  const sanitizedFiles: WorkerWorkspaceSnapshotFile[] = [];
+  for (const file of files) {
+    const path = normalizeWorkspacePath(file.path);
+    if (!path) continue;
+    if (file.encoding === "base64") {
+      sanitizedFiles.push({
+        path,
+        mime: file.mime || "",
+        kind: "binary",
+        bytes: base64ToBytes(file.content)
+      });
+      continue;
+    }
+    sanitizedFiles.push({
+      path,
+      mime: file.mime || "",
+      kind: "text",
+      text: file.content
+    });
+  }
+  return {
+    activePath: normalizeWorkspacePath(activePath),
+    files: sanitizedFiles
+  };
+}
+
+function fromWorkerWorkspaceFiles(files: WorkerWorkspaceSnapshotFile[]): RuntimeWorkspaceFile[] {
+  const nextFiles: RuntimeWorkspaceFile[] = [];
+  for (const file of files || []) {
+    const path = normalizeWorkspacePath(file.path);
+    if (!path) continue;
+    if (file.kind === "binary") {
+      nextFiles.push({
+        path,
+        mime: file.mime || "",
+        encoding: "base64",
+        content: bytesToBase64(file.bytes)
+      });
+      continue;
+    }
+    nextFiles.push({
+      path,
+      mime: file.mime || "",
+      encoding: "utf8",
+      content: file.text
+    });
+  }
+  return nextFiles;
+}
 
 export function createPyodideController(
   state: AppState,
@@ -59,6 +169,8 @@ export function createPyodideController(
   updateStatusBar: () => void,
   refocusEditor: () => void,
   getCodeForMode: (mode: RunMode) => string | null,
+  getWorkspaceFiles: () => RuntimeWorkspaceFile[],
+  getActiveFilename: () => string,
   getRunModeLabel: (mode: RunMode) => string,
   runBtn: HTMLButtonElement,
   runModeBtn: HTMLButtonElement,
@@ -75,6 +187,10 @@ export function createPyodideController(
   confirmAsyncioRun: () => Promise<boolean>,
   onReadyToast: () => void,
   onVariables: (payload: { items: VariableItem[]; truncated?: boolean }) => void,
+  onWorkspaceFiles: (
+    files: RuntimeWorkspaceFile[],
+    sync?: { activePath: string; deletedPaths: string[] }
+  ) => void,
   onRunFinished: (result: {
     ok: boolean;
     durationMs: number;
@@ -148,6 +264,35 @@ export function createPyodideController(
 
   function setReady(ready: boolean) {
     state.pyodideReady = ready;
+    updateStatusBar();
+  }
+
+  function disposeWorker() {
+    if (worker) {
+      try {
+        postToWorker({ type: "reset" });
+      } catch {
+        // ignore worker teardown errors
+      }
+      worker.terminate();
+      worker = null;
+    }
+    stdinSab = null;
+    stdinI32 = null;
+    stdinU8 = null;
+    interruptSab = null;
+    interruptI32 = null;
+  }
+
+  function handleFatalMemoryExhaustion() {
+    disposeWorker();
+    resetStdoutBuffer();
+    setReady(false);
+    onVariables({ items: [], truncated: false });
+    addConsoleLine("Pyodide ran out of memory and was restarted. Run again to continue.", {
+      dim: true,
+      system: true
+    });
     updateStatusBar();
   }
 
@@ -270,6 +415,9 @@ export function createPyodideController(
       case "run-complete":
         lastRunDurationMs =
           typeof message.durationMs === "number" ? message.durationMs : null;
+        if (message.fatal === "memory") {
+          handleFatalMemoryExhaustion();
+        }
         if (runResolve) {
           runResolve(message.ok);
           runResolve = null;
@@ -279,22 +427,24 @@ export function createPyodideController(
       case "vars":
         onVariables({ items: message.items || [], truncated: message.truncated });
         break;
+      case "workspace-sync":
+        onWorkspaceFiles(fromWorkerWorkspaceFiles(message.sync.files || []), {
+          activePath: normalizeWorkspacePath(message.sync.activePath),
+          deletedPaths: (message.sync.deletedPaths || []).map((path) =>
+            normalizeWorkspacePath(path)
+          )
+        });
+        break;
+      case "workspace-files":
+        onWorkspaceFiles(message.files || []);
+        break;
       default:
         break;
     }
   }
 
   function resetEnvironment() {
-    if (worker) {
-      postToWorker({ type: "reset" });
-      worker.terminate();
-      worker = null;
-    }
-    stdinSab = null;
-    stdinI32 = null;
-    stdinU8 = null;
-    interruptSab = null;
-    interruptI32 = null;
+    disposeWorker();
     resetStdoutBuffer();
     setReady(false);
     onVariables({ items: [], truncated: false });
@@ -358,7 +508,12 @@ export function createPyodideController(
         runResolve = resolve;
       });
 
-      const runMessage: WorkerRunMessage = { type: "run", code };
+      const runMessage: WorkerRunMessage = {
+        type: "run",
+        code,
+        mode,
+        workspace: toWorkerWorkspaceSnapshot(getActiveFilename(), getWorkspaceFiles())
+      };
       postToWorker(runMessage);
       didRun = true;
 

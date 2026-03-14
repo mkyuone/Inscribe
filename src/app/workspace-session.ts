@@ -3,6 +3,7 @@
 
 import { LS_KEYS } from "../constants.js";
 import { safeLS } from "../utils/storage.js";
+import { WorkspaceEncoding, guessMimeType, isTextPath, normalizeWorkspacePath } from "./workspace-files.js";
 
 export type TabDoc = {
   id: string;
@@ -10,6 +11,8 @@ export type TabDoc = {
   content: string;
   savedContent: string;
   dirty: boolean;
+  mime: string;
+  encoding: WorkspaceEncoding;
 };
 
 export type StoredTabsState = {
@@ -85,7 +88,7 @@ function openDb() {
 
 export function sanitizeFilename(name: string) {
   const trimmed = name.trim();
-  return trimmed || "untitled.py";
+  return trimmed ? normalizeWorkspacePath(trimmed) || "untitled.py" : "untitled.py";
 }
 
 function normalizeTabDoc(tab: Partial<TabDoc>): TabDoc | null {
@@ -99,12 +102,24 @@ function normalizeTabDoc(tab: Partial<TabDoc>): TabDoc | null {
   ) {
     return null;
   }
+
+  const name = sanitizeFilename(tab.name);
+  const mime = guessMimeType(name, typeof tab.mime === "string" ? tab.mime : "");
+  const encoding =
+    tab.encoding === "base64" || tab.encoding === "utf8"
+      ? tab.encoding
+      : isTextPath(name, mime)
+        ? "utf8"
+        : "base64";
+
   return {
     id: tab.id,
-    name: sanitizeFilename(tab.name),
+    name,
     content: tab.content,
     savedContent: tab.savedContent,
-    dirty: tab.dirty
+    dirty: tab.dirty,
+    mime,
+    encoding
   };
 }
 
@@ -144,7 +159,9 @@ function persistLegacyWorkspaceState(state: StoredTabsState, savedAt: number) {
   const active = getActiveTab(snapshot);
   if (!active) return;
   safeLS.set(LS_KEYS.FILENAME, active.name);
-  safeLS.set(LS_KEYS.DRAFT, active.content);
+  if (active.encoding !== "base64") {
+    safeLS.set(LS_KEYS.DRAFT, active.content);
+  }
 }
 
 export function parseStoredTabsState(raw: string | null): StoredTabsState | null {

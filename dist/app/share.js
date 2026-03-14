@@ -2,7 +2,7 @@
 // Copyright (c) 2023-2026 Mark Yu
 import { createToastVisibility } from "./toast.js";
 const SHARE_PREFIX = "v1:";
-export function createShareController(dom, getCode, addConsoleLine, saveFile, refocusEditor) {
+export function createShareController(dom, getCode, addConsoleLine, saveFile, refocusEditor, isWorkspaceEnabled) {
     let toastTimer = null;
     const shareToastVisibility = createToastVisibility(dom.shareToast);
     function showToast(title, desc, icon = "check_circle") {
@@ -112,6 +112,10 @@ export function createShareController(dom, getCode, addConsoleLine, saveFile, re
     function confirmLongUrl(length) {
         return new Promise((resolve) => {
             dom.shareWarnText.textContent = `This share link is very long (${length} characters). Continue anyway?`;
+            dom.shareWarnHint.textContent = isWorkspaceEnabled()
+                ? "Tip: download an .inscribeproj file instead to avoid very long URLs."
+                : "Tip: download the current file instead to avoid very long URLs.";
+            dom.shareWarnDownloadBtn.textContent = isWorkspaceEnabled() ? "Download project" : "Download file";
             openShareWarn();
             const cleanup = () => {
                 dom.shareWarnCancelBtn.removeEventListener("click", onCancel);
@@ -172,7 +176,9 @@ export function createShareController(dom, getCode, addConsoleLine, saveFile, re
             if (url.length > warnThreshold) {
                 const proceed = await confirmLongUrl(url.length);
                 if (!proceed) {
-                    showToast("Share cancelled", "Use Save to download a .py file.");
+                    showToast("Share cancelled", isWorkspaceEnabled()
+                        ? "Use Save to download the current .inscribeproj file."
+                        : "Use Save to download the current file.");
                     return;
                 }
             }
