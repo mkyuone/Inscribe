@@ -22,6 +22,7 @@ import { createInitialState } from "./app/state.js";
 import { setFilenameStatus, updateCursorStatus, updateStatusBar } from "./app/status.js";
 import { createTabsController } from "./app/tabs.js";
 import { createToastVisibility } from "./app/toast.js";
+import { loadWorkspaceState } from "./app/workspace-session.js";
 import { getRunModeLabel, setRunMode, updateRunModeUI } from "./app/run-mode.js";
 import { createRefocusEditor, createUiController } from "./app/ui.js";
 import { APP_VERSION, BUILD_TIME, COMMIT_HASH } from "./version.js";
@@ -197,7 +198,6 @@ export async function boot() {
     let tabsCtrl = null;
     const legacyFilename = safeLS.get(LS_KEYS.FILENAME) || "untitled.py";
     const legacyDraft = safeLS.get(LS_KEYS.DRAFT);
-    const hasStoredTabs = !!safeLS.get(LS_KEYS.TABS);
     const editorCtrl = createEditorController(dom, prefs, (isDirty) => {
         if (tabsCtrl) {
             tabsCtrl.setActiveDirty(!!isDirty);
@@ -212,6 +212,8 @@ export async function boot() {
             updatePrintConfirmState();
         recordAutoSnapshot();
     });
+    const storedWorkspace = await loadWorkspaceState();
+    const hasStoredTabs = !!storedWorkspace.state;
     recordAutoSnapshot = debounce(() => {
         const code = editorCtrl.getValue();
         if (!code.trim())
@@ -229,9 +231,9 @@ export async function boot() {
     createFindReplaceController(dom, editorCtrl.editor, refocusEditor);
     tabsCtrl = createTabsController({
         dom,
-        initialContent: editorCtrl.getValue(),
-        legacyFilename,
-        legacyDraft,
+        storedState: storedWorkspace.state,
+        defaultFilename: legacyFilename,
+        defaultContent: legacyDraft && legacyDraft.trim().length ? legacyDraft : editorCtrl.getValue(),
         setEditorDocument: (content, savedContent) => {
             editorCtrl.loadDocument(content, savedContent);
         },
@@ -245,6 +247,9 @@ export async function boot() {
         },
         onNotify: notifySystem
     });
+    if (storedWorkspace.source === "idb-backup") {
+        notifySystem("Session recovered", "Recovered your workspace from the last local backup snapshot.", "restore");
+    }
     const fileCtrl = createFileController(dom, {
         onOpenFileText: (filename, content) => {
             tabsCtrl === null || tabsCtrl === void 0 ? void 0 : tabsCtrl.openFileAsTab(filename, content);

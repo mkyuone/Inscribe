@@ -7,12 +7,44 @@ export function byId<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay = 200) {
+export type DebouncedFn<T extends (...args: any[]) => void> = ((
+  ...args: Parameters<T>
+) => void) & {
+  cancel: () => void;
+  flush: () => void;
+};
+
+export function debounce<T extends (...args: any[]) => void>(fn: T, delay = 200): DebouncedFn<T> {
   let t: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
+  let lastArgs: Parameters<T> | null = null;
+
+  const debounced = ((...args: Parameters<T>) => {
+    lastArgs = args;
     if (t) clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
+    t = setTimeout(() => {
+      t = null;
+      const nextArgs = lastArgs;
+      lastArgs = null;
+      if (nextArgs) fn(...nextArgs);
+    }, delay);
+  }) as DebouncedFn<T>;
+
+  debounced.cancel = () => {
+    if (t) clearTimeout(t);
+    t = null;
+    lastArgs = null;
   };
+
+  debounced.flush = () => {
+    if (!t) return;
+    clearTimeout(t);
+    t = null;
+    const nextArgs = lastArgs;
+    lastArgs = null;
+    if (nextArgs) fn(...nextArgs);
+  };
+
+  return debounced;
 }
 
 export function escapeHtml(str: string) {

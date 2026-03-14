@@ -1,9 +1,13 @@
 const { test, expect } = require("@playwright/test");
 
-async function waitForEditor(page) {
-  await page.goto("/");
+async function waitForEditorSurface(page) {
   await page.locator("#loadingOverlay.hidden").waitFor({ state: "attached" });
   await page.locator(".CodeMirror").waitFor();
+}
+
+async function waitForEditor(page) {
+  await page.goto("/");
+  await waitForEditorSurface(page);
 }
 
 async function setEditorValue(page, value) {
@@ -15,6 +19,16 @@ async function setEditorValue(page, value) {
     cmElement.CodeMirror.setValue(nextValue);
     cmElement.CodeMirror.focus();
   }, value);
+}
+
+async function getEditorValue(page) {
+  return page.evaluate(() => {
+    const cmElement = document.querySelector(".CodeMirror");
+    if (!cmElement || !cmElement.CodeMirror) {
+      throw new Error("CodeMirror instance not found.");
+    }
+    return cmElement.CodeMirror.getValue();
+  });
 }
 
 async function waitForPyodideReady(page) {
@@ -67,6 +81,27 @@ test("loads with startup banner and active-line highlight", async ({ page }) => 
   await expect(activeLine).toHaveCount(1);
   await expect(activeLine).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(activeLine).toHaveCSS("box-shadow", "none");
+});
+
+test("restores multi-tab session after reload", async ({ page }) => {
+  await waitForEditor(page);
+
+  await setEditorValue(page, "first = 1\n");
+  await page.click("#newTabBtn");
+  await setEditorValue(page, "second = 2\n");
+
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
+  await page.reload();
+  await waitForEditorSurface(page);
+
+  await expect(page.locator(".tabItem")).toHaveCount(2);
+  await expect(page.locator(".tabItem.active .tabName")).toHaveText("untitled-2.py");
+  await expect.poll(() => getEditorValue(page)).toBe("second = 2\n");
+
+  await page.locator('.tabItem [data-action="select"]').first().click();
+  await expect.poll(() => getEditorValue(page)).toBe("first = 1\n");
 });
 
 test("menus stay above toasts", async ({ page }) => {

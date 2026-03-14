@@ -8,11 +8,36 @@ export function byId(id) {
 }
 export function debounce(fn, delay = 200) {
     let t = null;
-    return (...args) => {
+    let lastArgs = null;
+    const debounced = ((...args) => {
+        lastArgs = args;
         if (t)
             clearTimeout(t);
-        t = setTimeout(() => fn(...args), delay);
+        t = setTimeout(() => {
+            t = null;
+            const nextArgs = lastArgs;
+            lastArgs = null;
+            if (nextArgs)
+                fn(...nextArgs);
+        }, delay);
+    });
+    debounced.cancel = () => {
+        if (t)
+            clearTimeout(t);
+        t = null;
+        lastArgs = null;
     };
+    debounced.flush = () => {
+        if (!t)
+            return;
+        clearTimeout(t);
+        t = null;
+        const nextArgs = lastArgs;
+        lastArgs = null;
+        if (nextArgs)
+            fn(...nextArgs);
+    };
+    return debounced;
 }
 export function escapeHtml(str) {
     return String(str)

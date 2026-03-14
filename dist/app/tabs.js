@@ -1,47 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
-import { LS_KEYS } from "../constants.js";
 import { debounce } from "../utils/dom.js";
-import { safeLS } from "../utils/storage.js";
+import { persistWorkspaceState, sanitizeFilename } from "./workspace-session.js";
 function createId() {
     return `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-function parseStoredState(raw) {
-    if (!raw)
-        return null;
-    try {
-        const parsed = JSON.parse(raw);
-        if (parsed.version !== 1 || !Array.isArray(parsed.tabs))
-            return null;
-        const tabs = parsed.tabs
-            .filter((tab) => !!tab &&
-            typeof tab.id === "string" &&
-            typeof tab.name === "string" &&
-            typeof tab.content === "string" &&
-            typeof tab.savedContent === "string" &&
-            typeof tab.dirty === "boolean")
-            .map((tab) => ({
-            id: tab.id,
-            name: sanitizeFilename(tab.name),
-            content: tab.content,
-            savedContent: tab.savedContent,
-            dirty: tab.dirty
-        }));
-        if (!tabs.length || typeof parsed.activeId !== "string")
-            return null;
-        return {
-            version: 1,
-            activeId: parsed.activeId,
-            tabs
-        };
-    }
-    catch {
-        return null;
-    }
-}
-function sanitizeFilename(name) {
-    const trimmed = name.trim();
-    return trimmed || "untitled.py";
 }
 function splitBaseAndExt(name) {
     const dotIdx = name.lastIndexOf(".");
@@ -67,29 +29,29 @@ function ensureUniqueFilename(name, docs, excludeId) {
     return `${base}-${Date.now()}${ext}`;
 }
 export function createTabsController(opts) {
-    const { dom, initialContent, legacyFilename, legacyDraft, setEditorDocument, refocusEditor, onActiveFilenameChange, onAnyDirtyChange, onNotify } = opts;
-    const stored = parseStoredState(safeLS.get(LS_KEYS.TABS));
+    const { dom, storedState, defaultFilename, defaultContent, setEditorDocument, refocusEditor, onActiveFilenameChange, onAnyDirtyChange, onNotify } = opts;
     let tabs = [];
     let activeId = "";
-    if (stored) {
-        tabs = stored.tabs.map((tab) => ({
+    if (storedState) {
+        tabs = storedState.tabs.map((tab) => ({
             id: tab.id,
             name: sanitizeFilename(tab.name),
             content: tab.content,
             savedContent: tab.savedContent,
             dirty: !!tab.dirty
         }));
-        activeId = tabs.some((tab) => tab.id === stored.activeId) ? stored.activeId : tabs[0].id;
+        activeId = tabs.some((tab) => tab.id === storedState.activeId)
+            ? storedState.activeId
+            : tabs[0].id;
     }
     else {
-        const startingName = sanitizeFilename(legacyFilename || "untitled.py");
-        const startingContent = legacyDraft && legacyDraft.trim().length ? legacyDraft : initialContent;
+        const startingName = sanitizeFilename(defaultFilename || "untitled.py");
         tabs = [
             {
                 id: createId(),
                 name: startingName,
-                content: startingContent,
-                savedContent: startingContent,
+                content: defaultContent,
+                savedContent: defaultContent,
                 dirty: false
             }
         ];
@@ -107,19 +69,25 @@ export function createTabsController(opts) {
     function hasDirtyTabs() {
         return tabs.some((tab) => tab.dirty);
     }
-    const persistDebounced = debounce(() => {
-        const payload = {
+    function snapshotState() {
+        return {
             version: 1,
             activeId,
-            tabs
+            tabs: tabs.map((tab) => ({ ...tab }))
         };
-        safeLS.set(LS_KEYS.TABS, JSON.stringify(payload));
-        const active = getActiveTab();
-        if (active) {
-            safeLS.set(LS_KEYS.FILENAME, active.name);
-            safeLS.set(LS_KEYS.DRAFT, active.content);
-        }
+    }
+    const persistDebounced = debounce(() => {
+        void persistWorkspaceState(snapshotState());
     }, 160);
+    const flushPersistence = () => {
+        persistDebounced.flush();
+    };
+    window.addEventListener("pagehide", flushPersistence);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            flushPersistence();
+        }
+    });
     function scrollActiveTabIntoView() {
         requestAnimationFrame(() => {
             const active = dom.tabStrip.querySelector(".tabItem.active");
@@ -570,7 +538,7 @@ export function createTabsController(opts) {
         applyRename(tabId, target.value);
     }, true);
     syncEditorToActiveTab();
-    persistDebounced();
+    void persistWorkspaceState(snapshotState());
     return {
         createNewTab,
         renameActiveTab: () => beginRename(activeId),

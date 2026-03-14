@@ -1,33 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 
-import { LS_KEYS } from "../constants.js";
 import { debounce } from "../utils/dom.js";
-import { safeLS } from "../utils/storage.js";
 import { DomRefs } from "./dom-refs.js";
+import {
+  persistWorkspaceState,
+  sanitizeFilename,
+  StoredTabsState,
+  TabDoc
+} from "./workspace-session.js";
 
-type TabDoc = {
-  id: string;
-  name: string;
-  content: string;
-  savedContent: string;
-  dirty: boolean;
-};
-
-type StoredTabsState = {
-  version: 1;
-  activeId: string;
-  tabs: TabDoc[];
-};
 type DropPosition = "before" | "after";
 
 type NotifyFn = (title: string, desc: string, icon?: string) => void;
 
 type TabsControllerOptions = {
   dom: DomRefs;
-  initialContent: string;
-  legacyFilename: string;
-  legacyDraft: string | null;
+  storedState: StoredTabsState | null;
+  defaultFilename: string;
+  defaultContent: string;
   setEditorDocument: (content: string, savedContent: string) => void;
   refocusEditor: () => void;
   onActiveFilenameChange: (name: string) => void;
@@ -53,44 +44,6 @@ export type TabsController = {
 
 function createId() {
   return `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function parseStoredState(raw: string | null): StoredTabsState | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<StoredTabsState>;
-    if (parsed.version !== 1 || !Array.isArray(parsed.tabs)) return null;
-    const tabs = parsed.tabs
-      .filter(
-        (tab): tab is TabDoc =>
-          !!tab &&
-          typeof tab.id === "string" &&
-          typeof tab.name === "string" &&
-          typeof tab.content === "string" &&
-          typeof tab.savedContent === "string" &&
-          typeof tab.dirty === "boolean"
-      )
-      .map((tab) => ({
-        id: tab.id,
-        name: sanitizeFilename(tab.name),
-        content: tab.content,
-        savedContent: tab.savedContent,
-        dirty: tab.dirty
-      }));
-    if (!tabs.length || typeof parsed.activeId !== "string") return null;
-    return {
-      version: 1,
-      activeId: parsed.activeId,
-      tabs
-    };
-  } catch {
-    return null;
-  }
-}
-
-function sanitizeFilename(name: string) {
-  const trimmed = name.trim();
-  return trimmed || "untitled.py";
 }
 
 function splitBaseAndExt(name: string) {
@@ -122,9 +75,9 @@ function ensureUniqueFilename(name: string, docs: TabDoc[], excludeId?: string) 
 export function createTabsController(opts: TabsControllerOptions): TabsController {
   const {
     dom,
-    initialContent,
-    legacyFilename,
-    legacyDraft,
+    storedState,
+    defaultFilename,
+    defaultContent,
     setEditorDocument,
     refocusEditor,
     onActiveFilenameChange,
@@ -132,28 +85,28 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     onNotify
   } = opts;
 
-  const stored = parseStoredState(safeLS.get(LS_KEYS.TABS));
   let tabs: TabDoc[] = [];
   let activeId = "";
 
-  if (stored) {
-    tabs = stored.tabs.map((tab) => ({
+  if (storedState) {
+    tabs = storedState.tabs.map((tab) => ({
       id: tab.id,
       name: sanitizeFilename(tab.name),
       content: tab.content,
       savedContent: tab.savedContent,
       dirty: !!tab.dirty
     }));
-    activeId = tabs.some((tab) => tab.id === stored.activeId) ? stored.activeId : tabs[0].id;
+    activeId = tabs.some((tab) => tab.id === storedState.activeId)
+      ? storedState.activeId
+      : tabs[0].id;
   } else {
-    const startingName = sanitizeFilename(legacyFilename || "untitled.py");
-    const startingContent = legacyDraft && legacyDraft.trim().length ? legacyDraft : initialContent;
+    const startingName = sanitizeFilename(defaultFilename || "untitled.py");
     tabs = [
       {
         id: createId(),
         name: startingName,
-        content: startingContent,
-        savedContent: startingContent,
+        content: defaultContent,
+        savedContent: defaultContent,
         dirty: false
       }
     ];
@@ -174,19 +127,28 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     return tabs.some((tab) => tab.dirty);
   }
 
-  const persistDebounced = debounce(() => {
-    const payload: StoredTabsState = {
+  function snapshotState(): StoredTabsState {
+    return {
       version: 1,
       activeId,
-      tabs
+      tabs: tabs.map((tab) => ({ ...tab }))
     };
-    safeLS.set(LS_KEYS.TABS, JSON.stringify(payload));
-    const active = getActiveTab();
-    if (active) {
-      safeLS.set(LS_KEYS.FILENAME, active.name);
-      safeLS.set(LS_KEYS.DRAFT, active.content);
-    }
+  }
+
+  const persistDebounced = debounce(() => {
+    void persistWorkspaceState(snapshotState());
   }, 160);
+
+  const flushPersistence = () => {
+    persistDebounced.flush();
+  };
+
+  window.addEventListener("pagehide", flushPersistence);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flushPersistence();
+    }
+  });
 
   function scrollActiveTabIntoView() {
     requestAnimationFrame(() => {
@@ -655,7 +617,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   );
 
   syncEditorToActiveTab();
-  persistDebounced();
+  void persistWorkspaceState(snapshotState());
 
   return {
     createNewTab,

@@ -23,6 +23,7 @@ import { createInitialState } from "./app/state.js";
 import { setFilenameStatus, updateCursorStatus, updateStatusBar } from "./app/status.js";
 import { createTabsController, TabsController } from "./app/tabs.js";
 import { createToastVisibility } from "./app/toast.js";
+import { loadWorkspaceState } from "./app/workspace-session.js";
 import { getRunModeLabel, setRunMode, updateRunModeUI } from "./app/run-mode.js";
 import { createRefocusEditor, createUiController, UiController } from "./app/ui.js";
 import { APP_VERSION, BUILD_TIME, COMMIT_HASH } from "./version.js";
@@ -237,7 +238,6 @@ export async function boot() {
   let tabsCtrl: TabsController | null = null;
   const legacyFilename = safeLS.get(LS_KEYS.FILENAME) || "untitled.py";
   const legacyDraft = safeLS.get(LS_KEYS.DRAFT);
-  const hasStoredTabs = !!safeLS.get(LS_KEYS.TABS);
 
   const editorCtrl = createEditorController(
     dom,
@@ -258,6 +258,9 @@ export async function boot() {
     }
   );
 
+  const storedWorkspace = await loadWorkspaceState();
+  const hasStoredTabs = !!storedWorkspace.state;
+
   recordAutoSnapshot = debounce(() => {
     const code = editorCtrl.getValue();
     if (!code.trim()) return;
@@ -274,9 +277,10 @@ export async function boot() {
 
   tabsCtrl = createTabsController({
     dom,
-    initialContent: editorCtrl.getValue(),
-    legacyFilename,
-    legacyDraft,
+    storedState: storedWorkspace.state,
+    defaultFilename: legacyFilename,
+    defaultContent:
+      legacyDraft && legacyDraft.trim().length ? legacyDraft : editorCtrl.getValue(),
     setEditorDocument: (content, savedContent) => {
       editorCtrl.loadDocument(content, savedContent);
     },
@@ -290,6 +294,14 @@ export async function boot() {
     },
     onNotify: notifySystem
   });
+
+  if (storedWorkspace.source === "idb-backup") {
+    notifySystem(
+      "Session recovered",
+      "Recovered your workspace from the last local backup snapshot.",
+      "restore"
+    );
+  }
 
   const fileCtrl = createFileController(
     dom,
