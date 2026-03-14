@@ -178,12 +178,20 @@ export function createUiController(
       { keys: [mod, "Shift", enterKey], desc: "Run current cell (# %%)" },
       { keys: [mod, "S"], desc: "Save file" },
       { keys: [mod, "O"], desc: "Open file" },
+      { keys: [mod, "F"], desc: "Open Find" },
+      { keys: [mod, "H"], desc: "Open Replace" },
+      { keys: ["F3"], desc: "Next search match" },
+      { keys: ["Shift", "F3"], desc: "Previous search match" },
+      { keys: ["Enter"], desc: "Next match in Find field" },
+      { keys: ["Shift", "Enter"], desc: "Previous match in Find field" },
+      { keys: ["Enter"], desc: "Replace current match in Replace field" },
+      { keys: ["Shift", "Enter"], desc: "Replace all in Replace field" },
       { keys: [mod, "Alt", "N"], desc: "New tab" },
       { keys: ["F2"], desc: "Rename current tab" },
       { keys: [mod, "Alt", "← / →"], desc: "Previous / next tab" },
       { keys: [mod, "P"], desc: "Print / Export" },
       { keys: [mod, ","], desc: "Open Settings" },
-      { keys: ["Esc"], desc: "Close modals / menus" }
+      { keys: ["Esc"], desc: "Close modals, menus, or Find" }
     ];
 
     dom.shortcutBody.innerHTML = shortcuts

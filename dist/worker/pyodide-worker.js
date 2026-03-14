@@ -99,21 +99,21 @@ import js
 import builtins
 import time as _time
 
-class JSConsole:
+class _InscribeJSConsole:
     def write(self, s):
         js.inscribeStdout(s)
     def flush(self):
         js.inscribeStdoutFlush()
 
-sys.stdout = JSConsole()
-sys.stderr = JSConsole()
+sys.stdout = _InscribeJSConsole()
+sys.stderr = _InscribeJSConsole()
 
-def custom_input(prompt=""):
+def _inscribe_input(prompt=""):
     val = js.__inscribeReadline(prompt)
     if val is None:
         raise KeyboardInterrupt("Execution interrupted")
     return val
-builtins.input = custom_input
+builtins.input = _inscribe_input
 
 _orig_sleep = _time.sleep
 def _inscribe_sleep(secs=0):
@@ -123,6 +123,8 @@ def _inscribe_sleep(secs=0):
     finally:
         js.__inscribeResumeTimer()
 _time.sleep = _inscribe_sleep
+
+_INSCRIBE_BASELINE_NAMES = set(globals().keys())
   `);
 }
 const BUILTIN_GUARD_CODE = `
@@ -149,10 +151,14 @@ def _inscribe_collect_vars():
     items = []
     try:
         g = globals()
+        baseline = set(_INSCRIBE_BASELINE_NAMES)
     except Exception:
         g = {}
+        baseline = set()
     for k, v in g.items():
         if k.startswith("_"):
+            continue
+        if k in baseline:
             continue
         if k in ("__builtins__", "js", "sys", "builtins", "pyodide"):
             continue

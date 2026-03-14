@@ -21,7 +21,7 @@ export function createVariablesController(dom) {
     };
     const setVariables = (items, truncated = false) => {
         if (!items.length) {
-            renderEmpty("No variables yet.");
+            renderEmpty("No user variables yet.");
             return;
         }
         dom.varsMeta.textContent = truncated ? `${items.length}+` : `${items.length}`;
@@ -34,7 +34,7 @@ export function createVariablesController(dom) {
             .join("");
     };
     const clear = () => {
-        renderEmpty("Run code to see variables.");
+        renderEmpty("Run code to see user variables.");
     };
     const toggle = () => {
         setOpen(!isOpen);
