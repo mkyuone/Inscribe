@@ -195,6 +195,11 @@
                 <span class="miHint" id="hintSettings">⌘ ,</span>
               </button>
 
+              <button class="menuItem" id="shortcutsBtn" type="button" role="menuitem">
+                <span class="material-icons" aria-hidden="true">keyboard</span>
+                <span class="miLabel">Shortcuts</span>
+              </button>
+
               <button class="menuItem" id="resetBtn" type="button" role="menuitem">
                 <span class="material-icons" aria-hidden="true">restart_alt</span>
                 <span class="miLabel">Reset Pyodide</span>
@@ -371,21 +376,23 @@
     </footer>
   </div>
 
-  <div class="toast" id="shareToast" role="status" aria-live="polite">
-    <span class="material-icons" id="shareToastIcon" aria-hidden="true">check_circle</span>
-    <div class="toastText">
-      <div class="toastTitle" id="shareToastTitle">Shared code loaded</div>
-      <div class="toastDesc" id="shareToastDesc">This editor opened code from a share link.</div>
+  <div class="toastViewport" aria-live="polite" aria-atomic="false">
+    <div class="toast" id="shareToast" role="status" aria-live="polite" hidden>
+      <span class="material-icons" id="shareToastIcon" aria-hidden="true">check_circle</span>
+      <div class="toastText">
+        <div class="toastTitle" id="shareToastTitle">Shared code loaded</div>
+        <div class="toastDesc" id="shareToastDesc">This editor opened code from a share link.</div>
+      </div>
     </div>
-  </div>
 
-  <div class="toast" id="sysToast" role="status" aria-live="polite">
-    <span class="material-icons" id="sysToastIcon" aria-hidden="true">check_circle</span>
-    <div class="toastText">
-      <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
-      <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
-      <div class="toastActions" id="sysToastActions" hidden>
-        <button class="toastAction" id="sysToastActionBtn" type="button" hidden>Undo</button>
+    <div class="toast" id="sysToast" role="status" aria-live="polite" hidden>
+      <span class="material-icons" id="sysToastIcon" aria-hidden="true">check_circle</span>
+      <div class="toastText">
+        <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
+        <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
+        <div class="toastActions" id="sysToastActions" hidden>
+          <button class="toastAction" id="sysToastActionBtn" type="button" hidden>Undo</button>
+        </div>
       </div>
     </div>
   </div>
@@ -406,8 +413,8 @@
         </div>
       </div>
       <p>
-        This software is provided “as is”, without warranty of any kind.<br/>
-        Licensed under the <a class="linkBtn" id="licenseLink" href="https://github.com/mkyuone/Inscribe/blob/main/LICENSE" target="_blank" rel="noreferrer">"GNU General Public License v3.0"</a>.
+        This software is provided "as is", without warranty of any kind.<br/>
+        Licensed under the <a class="linkBtn" id="licenseLink" href="https://github.com/mkyuone/Inscribe/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU General Public License v3.0</a>.
       </p>
       <p style="color: rgba(15,23,42,0.70);">
         Copyright © 2023–2026 Mark Yu.
@@ -529,26 +536,40 @@ View the full license text on GitHub:
           </div>
         </section>
 
-        <section class="settingsCard muted" aria-label="Shortcuts">
-          <div class="settingsCardTitle">
-            <span class="material-icons" aria-hidden="true">keyboard</span>
-            Shortcuts
-          </div>
-          <table class="shortcuts" aria-label="Keyboard shortcuts">
-            <thead>
-              <tr>
-                <th>Keys</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="shortcutBody"></tbody>
-          </table>
-        </section>
       </div>
 
       <div class="modalRow">
+        <button class="toolBtn" id="openShortcutsBtn" type="button">Keyboard shortcuts</button>
         <button class="toolBtn" id="resetPrefsBtn" type="button">Reset defaults</button>
         <button class="toolBtn primary" id="closeSettingsBtn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortcuts modal -->
+  <div class="overlay" id="shortcutsOverlay" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+    <div class="modal modalSettings modalShortcuts">
+      <div class="settingsHeader">
+        <div>
+          <h2 id="shortcutsTitle">Keyboard shortcuts</h2>
+          <p class="settingsIntro">Reference for common editor and file actions.</p>
+        </div>
+      </div>
+
+      <div class="shortcutsPanel">
+        <table class="shortcuts" aria-label="Keyboard shortcuts">
+          <thead>
+            <tr>
+              <th>Keys</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="shortcutBody"></tbody>
+        </table>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn primary" id="closeShortcutsBtn" type="button">Close</button>
       </div>
     </div>
   </div>

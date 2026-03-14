@@ -12,6 +12,7 @@ import { createHistoryController } from "./app/history.js";
 import { createHistoryUiController } from "./app/history-ui.js";
 import { createFindReplaceController } from "./app/find-replace.js";
 import { setupConsoleInput } from "./app/input.js";
+import { APP_BANNER } from "./app-meta.js";
 import { createPrintController, PrintController } from "./app/print.js";
 import { createPyodideController, PyodideController } from "./app/pyodide.js";
 import { createVariablesController } from "./app/variables.js";
@@ -21,6 +22,7 @@ import { createShareController } from "./app/share.js";
 import { createInitialState } from "./app/state.js";
 import { setFilenameStatus, updateCursorStatus, updateStatusBar } from "./app/status.js";
 import { createTabsController, TabsController } from "./app/tabs.js";
+import { createToastVisibility } from "./app/toast.js";
 import { getRunModeLabel, setRunMode, updateRunModeUI } from "./app/run-mode.js";
 import { createRefocusEditor, createUiController, UiController } from "./app/ui.js";
 import { APP_VERSION, BUILD_TIME, COMMIT_HASH } from "./version.js";
@@ -84,6 +86,8 @@ export async function boot() {
   if (booted) return;
   booted = true;
 
+  window.console.info(APP_BANNER);
+
   const consoleFallback = document.getElementById("console");
   const runBtnFallback = document.getElementById("runBtn") as HTMLButtonElement | null;
   const loadingOverlay = document.getElementById("loadingOverlay") as HTMLDivElement | null;
@@ -144,6 +148,7 @@ export async function boot() {
 
   let sysToastTimer: ReturnType<typeof setTimeout> | null = null;
   let sysToastActionHandler: (() => void) | null = null;
+  const sysToastVisibility = createToastVisibility(dom.sysToast);
 
   const clearSystemToastAction = () => {
     sysToastActionHandler = null;
@@ -156,7 +161,7 @@ export async function boot() {
       clearTimeout(sysToastTimer);
       sysToastTimer = null;
     }
-    dom.sysToast.classList.remove("show");
+    sysToastVisibility.hide();
     clearSystemToastAction();
   };
 
@@ -189,7 +194,7 @@ export async function boot() {
       clearSystemToastAction();
     }
 
-    dom.sysToast.classList.add("show");
+    sysToastVisibility.show();
     if (sysToastTimer) clearTimeout(sysToastTimer);
     const timeoutMs = opts?.durationMs ?? (opts?.action ? 3200 : 2400);
     sysToastTimer = setTimeout(() => {
@@ -537,6 +542,10 @@ export async function boot() {
     ui.closeMenu();
     ui.openSettings();
   });
+  dom.shortcutsBtn.addEventListener("click", () => {
+    ui.closeMenu();
+    ui.openShortcuts();
+  });
   dom.aboutBtn.addEventListener("click", () => {
     ui.closeMenu();
     ui.openAbout();
@@ -582,6 +591,13 @@ export async function boot() {
   });
   dom.closeSettingsBtn.addEventListener("click", () => {
     ui.closeSettings();
+    refocusEditor();
+  });
+  dom.openShortcutsBtn.addEventListener("click", () => {
+    ui.openShortcuts();
+  });
+  dom.closeShortcutsBtn.addEventListener("click", () => {
+    ui.closeShortcuts();
     refocusEditor();
   });
   dom.printCancelBtn.addEventListener("click", () => {

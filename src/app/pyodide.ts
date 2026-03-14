@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2026 Mark Yu
 
 import { formatDuration } from "../utils/time.js";
+import { APP_BANNER } from "../app-meta.js";
 import { AppState, RunMode } from "./types.js";
 import type { VariableItem } from "./variables.js";
 import { BUILD_TIME } from "../version.js";
@@ -241,7 +242,7 @@ export function createPyodideController(
           dim: true,
           system: true
         });
-        addConsoleLine("Inscribe v3.1 / (c) Mark Yu, py.mkyu.one", {
+        addConsoleLine(APP_BANNER, {
           dim: true,
           system: true
         });

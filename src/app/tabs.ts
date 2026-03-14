@@ -164,6 +164,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   let dragTabId: string | null = null;
   let dragOverTabId: string | null = null;
   let dragOverPosition: DropPosition | null = null;
+  let dragInsertIndex: number | null = null;
 
   function getActiveTab() {
     return tabs.find((tab) => tab.id === activeId) ?? tabs[0];
@@ -431,6 +432,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     dragTabId = null;
     dragOverTabId = null;
     dragOverPosition = null;
+    dragInsertIndex = null;
   }
 
   function clearDragClasses() {
@@ -455,19 +457,72 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     }
   }
 
+  function getDropTargets() {
+    return Array.from(dom.tabStrip.querySelectorAll<HTMLElement>(".tabItem")).filter((el) => {
+      const tabId = el.dataset.tabId;
+      return !!tabId && tabId !== dragTabId;
+    });
+  }
+
+  function autoScrollTabStrip(clientX: number) {
+    const rect = dom.tabStrip.getBoundingClientRect();
+    const edgePadding = 40;
+    const maxStep = 18;
+
+    if (clientX < rect.left + edgePadding) {
+      const progress = (rect.left + edgePadding - clientX) / edgePadding;
+      dom.tabStrip.scrollLeft -= Math.ceil(progress * maxStep);
+      return;
+    }
+    if (clientX > rect.right - edgePadding) {
+      const progress = (clientX - (rect.right - edgePadding)) / edgePadding;
+      dom.tabStrip.scrollLeft += Math.ceil(progress * maxStep);
+    }
+  }
+
+  function updateDragTargetFromPointer(clientX: number) {
+    if (!dragTabId) return;
+
+    const targets = getDropTargets();
+    if (!targets.length) {
+      dragOverTabId = null;
+      dragOverPosition = null;
+      dragInsertIndex = 0;
+      return;
+    }
+
+    let insertIndex = targets.length;
+    for (let i = 0; i < targets.length; i += 1) {
+      const rect = targets[i].getBoundingClientRect();
+      const midpoint = rect.left + rect.width / 2;
+      if (clientX < midpoint) {
+        insertIndex = i;
+        break;
+      }
+    }
+
+    dragInsertIndex = insertIndex;
+    if (insertIndex < targets.length) {
+      dragOverTabId = targets[insertIndex].dataset.tabId ?? null;
+      dragOverPosition = "before";
+      return;
+    }
+
+    const lastTarget = targets[targets.length - 1];
+    dragOverTabId = lastTarget.dataset.tabId ?? null;
+    dragOverPosition = "after";
+  }
+
   function reorderDraggedTab() {
-    if (!dragTabId || !dragOverTabId || !dragOverPosition) return;
-    if (dragTabId === dragOverTabId) return;
+    if (!dragTabId || dragInsertIndex === null) return;
 
     const sourceIdx = tabs.findIndex((tab) => tab.id === dragTabId);
-    const targetIdx = tabs.findIndex((tab) => tab.id === dragOverTabId);
-    if (sourceIdx < 0 || targetIdx < 0) return;
+    if (sourceIdx < 0) return;
 
     const sourceTab = tabs[sourceIdx];
     const nextTabs = tabs.filter((tab) => tab.id !== dragTabId);
-    const adjustedTargetIdx = sourceIdx < targetIdx ? targetIdx - 1 : targetIdx;
-    const insertIdx = dragOverPosition === "before" ? adjustedTargetIdx : adjustedTargetIdx + 1;
-    nextTabs.splice(Math.max(0, Math.min(insertIdx, nextTabs.length)), 0, sourceTab);
+    const insertIdx = Math.max(0, Math.min(dragInsertIndex, nextTabs.length));
+    nextTabs.splice(insertIdx, 0, sourceTab);
     tabs = nextTabs;
 
     renderTabs();
@@ -505,6 +560,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     dragTabId = tabId;
     dragOverTabId = null;
     dragOverPosition = null;
+    dragInsertIndex = null;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("text/plain", tabId);
@@ -513,27 +569,18 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   });
   dom.tabStrip.addEventListener("dragover", (event) => {
     if (!dragTabId) return;
-    const target = event.target as HTMLElement | null;
-    const tabItem = target?.closest<HTMLElement>(".tabItem");
-    if (!tabItem) return;
-    const tabId = tabItem.dataset.tabId;
-    if (!tabId || tabId === dragTabId) return;
-
     event.preventDefault();
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = "move";
     }
-
-    const rect = tabItem.getBoundingClientRect();
-    const nextPosition: DropPosition = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
-    if (dragOverTabId === tabId && dragOverPosition === nextPosition) return;
-    dragOverTabId = tabId;
-    dragOverPosition = nextPosition;
+    autoScrollTabStrip(event.clientX);
+    updateDragTargetFromPointer(event.clientX);
     applyDragClasses();
   });
   dom.tabStrip.addEventListener("drop", (event) => {
     if (!dragTabId) return;
     event.preventDefault();
+    updateDragTargetFromPointer(event.clientX);
     reorderDraggedTab();
     clearDragState();
     clearDragClasses();

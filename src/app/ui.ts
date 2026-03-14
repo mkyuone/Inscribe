@@ -12,6 +12,8 @@ export type UiController = {
   closeLicense: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openShortcuts: () => void;
+  closeShortcuts: () => void;
   openPrint: () => void;
   closePrint: () => void;
   openShareWarn: () => void;
@@ -77,10 +79,18 @@ export function createUiController(
     dom.licenseOverlay.classList.remove("active");
   }
   function openSettings() {
+    closeShortcuts();
     dom.settingsOverlay.classList.add("active");
   }
   function closeSettings() {
     dom.settingsOverlay.classList.remove("active");
+  }
+  function openShortcuts() {
+    closeSettings();
+    dom.shortcutsOverlay.classList.add("active");
+  }
+  function closeShortcuts() {
+    dom.shortcutsOverlay.classList.remove("active");
   }
   function openPrint() {
     dom.printOverlay.classList.add("active");
@@ -99,6 +109,7 @@ export function createUiController(
     closeAbout();
     closeLicense();
     closeSettings();
+    closeShortcuts();
     closePrint();
     closeShareWarn();
   }
@@ -286,6 +297,9 @@ export function createUiController(
     dom.settingsOverlay.addEventListener("click", (e) => {
       if (e.target === dom.settingsOverlay) closeSettings();
     });
+    dom.shortcutsOverlay.addEventListener("click", (e) => {
+      if (e.target === dom.shortcutsOverlay) closeShortcuts();
+    });
     dom.printOverlay.addEventListener("click", (e) => {
       if (e.target === dom.printOverlay) closePrint();
     });
@@ -343,6 +357,8 @@ export function createUiController(
     closeLicense,
     openSettings,
     closeSettings,
+    openShortcuts,
+    closeShortcuts,
     openPrint,
     closePrint,
     openShareWarn,

@@ -532,10 +532,11 @@
     gap:6px;
     overflow-x:auto;
     overflow-y:hidden;
-    padding-bottom:2px;
+    padding:2px 6px 4px;
     scrollbar-width:thin;
   }
   .tabItem{
+    position:relative;
     flex:0 0 auto;
     min-width:0;
     display:inline-flex;
@@ -545,18 +546,47 @@
     background:rgba(15,23,42,0.05);
     border-radius:10px;
     padding:0 2px 0 4px;
-    transition:background var(--tFast) var(--ease), border-color var(--tFast) var(--ease);
+    transition:
+      background var(--tFast) var(--ease),
+      border-color var(--tFast) var(--ease),
+      transform var(--tFast) var(--ease);
     cursor:grab;
+  }
+  .tabItem::before,
+  .tabItem::after{
+    content:"";
+    position:absolute;
+    top:5px;
+    bottom:5px;
+    width:3px;
+    border-radius:999px;
+    background:rgba(37,99,235,0.95);
+    opacity:0;
+    pointer-events:none;
+    transform:scaleY(0.7);
+    transition:opacity var(--tFast) var(--ease), transform var(--tFast) var(--ease);
+  }
+  .tabItem::before{
+    left:-6px;
+  }
+  .tabItem::after{
+    right:-6px;
   }
   .tabItem.dragging{
     opacity:0.52;
+    transform:scale(0.985);
     cursor:grabbing;
   }
   .tabItem.dropBefore{
-    box-shadow:inset 2px 0 0 rgba(37,99,235,0.95);
+    z-index:1;
   }
   .tabItem.dropAfter{
-    box-shadow:inset -2px 0 0 rgba(37,99,235,0.95);
+    z-index:1;
+  }
+  .tabItem.dropBefore::before,
+  .tabItem.dropAfter::after{
+    opacity:1;
+    transform:scaleY(1);
   }
   .tabItem.active{
     border-color:rgba(37,99,235,0.34);
@@ -1059,14 +1089,24 @@
     max-width:40vw;
   }
 
-  .toast{
+  .toastViewport{
     position:fixed;
     right:16px;
     top:74px;
     z-index:70;
     width:min(360px, calc(100vw - 32px));
-    min-height:74px;
     display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    pointer-events:none;
+  }
+  .toast{
+    position:relative;
+    width:100%;
+    min-height:74px;
+    display:grid;
+    grid-template-columns:auto minmax(0, 1fr);
     align-items:flex-start;
     gap:10px;
     padding:10px 12px;
@@ -1081,6 +1121,9 @@
     pointer-events:none;
     transition:opacity var(--tMed) var(--ease), transform var(--tMed) var(--ease);
   }
+  .toast[hidden]{
+    display:none !important;
+  }
   .toast.show{
     opacity:1;
     transform:translateY(0);
@@ -1094,8 +1137,9 @@
   .toastText{
     display:flex;
     flex-direction:column;
-    gap:2px;
+    gap:4px;
     flex:1 1 auto;
+    min-width:0;
   }
   .toastTitle{
     font-size:13.5px;
@@ -1106,12 +1150,15 @@
   .toastDesc{
     font-size:12.5px;
     color:rgba(15,23,42,0.65);
+    line-height:1.45;
+    overflow-wrap:anywhere;
   }
   .toastActions{
-    margin-top:6px;
+    margin-top:4px;
     display:flex;
     align-items:center;
     gap:8px;
+    flex-wrap:wrap;
   }
   .toastActions[hidden]{
     display:none !important;
@@ -1143,7 +1190,7 @@
     margin-top:0;
   }
   @media (max-width:760px){
-    .toast{
+    .toastViewport{
       right:10px;
       left:10px;
       width:auto;
@@ -1325,6 +1372,9 @@
     flex-direction:column;
     overflow:hidden;
   }
+  .modalShortcuts{
+    width:min(640px, 94vw);
+  }
   .modalSettings .settingsCardTitle{
     letter-spacing:0.08em;
   }
@@ -1336,17 +1386,20 @@
     overflow:hidden;
   }
   .historyGrid{
+    --historyPanelHeight:clamp(280px, 48vh, 420px);
     display:grid;
     grid-template-columns:minmax(220px, 1fr) 2fr;
     gap:12px;
     margin-top:8px;
+    align-items:stretch;
   }
   .historyList{
     border:1px solid rgba(15,23,42,0.10);
     border-radius:12px;
     background:rgba(15,23,42,0.02);
     padding:8px;
-    max-height:360px;
+    height:var(--historyPanelHeight);
+    min-height:0;
     overflow:auto;
   }
   .historyEmpty{
@@ -1394,6 +1447,8 @@
     display:flex;
     flex-direction:column;
     overflow:hidden;
+    height:var(--historyPanelHeight);
+    min-height:0;
   }
   .historyPreviewTitle{
     font-size:12px;
@@ -1408,7 +1463,8 @@
     line-height:1.5;
     padding:8px 10px 10px;
     overflow:auto;
-    max-height:360px;
+    flex:1 1 auto;
+    min-height:0;
   }
   .diffLine{
     display:flex;
@@ -1434,11 +1490,12 @@
   }
   @media (max-width:760px){
     .historyGrid{
+      --historyPanelHeight:220px;
       grid-template-columns:1fr;
     }
     .historyList,
-    .historyDiff{
-      max-height:220px;
+    .historyPreview{
+      height:var(--historyPanelHeight);
     }
   }
   .warnBlock{
@@ -1704,6 +1761,14 @@
     margin:6px 0 0 26px;
     font-size:12.5px;
     color:rgba(15,23,42,0.62);
+  }
+  .shortcutsPanel{
+    min-height:0;
+    overflow:auto;
+    border:1px solid rgba(15,23,42,0.10);
+    border-radius:12px;
+    background:rgba(15,23,42,0.03);
+    padding:6px 8px 8px;
   }
   .shortcuts thead th{
     text-align:left;
@@ -2037,11 +2102,9 @@
     border-color:rgba(148,163,184,0.3);
     background:rgba(148,163,184,0.14);
   }
-  html[data-theme="dark"] .tabItem.dropBefore{
-    box-shadow:inset 2px 0 0 rgba(96,165,250,0.95);
-  }
-  html[data-theme="dark"] .tabItem.dropAfter{
-    box-shadow:inset -2px 0 0 rgba(96,165,250,0.95);
+  html[data-theme="dark"] .tabItem::before,
+  html[data-theme="dark"] .tabItem::after{
+    background:rgba(96,165,250,0.95);
   }
   html[data-theme="dark"] .tabItem.active{
     border-color:rgba(96,165,250,0.52);
@@ -2302,6 +2365,10 @@
   }
   html[data-theme="dark"] .settingsCardTitle .material-icons{
     color:rgba(226,232,240,0.6);
+  }
+  html[data-theme="dark"] .shortcutsPanel{
+    border-color:rgba(148,163,184,0.2);
+    background:rgba(148,163,184,0.08);
   }
   html[data-theme="dark"] .historyList,
   html[data-theme="dark"] .historyPreview{

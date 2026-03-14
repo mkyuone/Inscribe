@@ -31,10 +31,18 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         dom.licenseOverlay.classList.remove("active");
     }
     function openSettings() {
+        closeShortcuts();
         dom.settingsOverlay.classList.add("active");
     }
     function closeSettings() {
         dom.settingsOverlay.classList.remove("active");
+    }
+    function openShortcuts() {
+        closeSettings();
+        dom.shortcutsOverlay.classList.add("active");
+    }
+    function closeShortcuts() {
+        dom.shortcutsOverlay.classList.remove("active");
     }
     function openPrint() {
         dom.printOverlay.classList.add("active");
@@ -52,6 +60,7 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         closeAbout();
         closeLicense();
         closeSettings();
+        closeShortcuts();
         closePrint();
         closeShareWarn();
     }
@@ -228,6 +237,10 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
             if (e.target === dom.settingsOverlay)
                 closeSettings();
         });
+        dom.shortcutsOverlay.addEventListener("click", (e) => {
+            if (e.target === dom.shortcutsOverlay)
+                closeShortcuts();
+        });
         dom.printOverlay.addEventListener("click", (e) => {
             if (e.target === dom.printOverlay)
                 closePrint();
@@ -283,6 +296,8 @@ export function createUiController(dom, editor, refocusEditor, onRunDefault, onR
         closeLicense,
         openSettings,
         closeSettings,
+        openShortcuts,
+        closeShortcuts,
         openPrint,
         closePrint,
         openShareWarn,

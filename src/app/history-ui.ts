@@ -195,6 +195,10 @@ export function createHistoryUiController(
     if (!selectedId) return;
     const entry = entries.find((e) => e.id === selectedId);
     if (!entry) return;
+    const proceed = window.confirm(
+      "Restore this snapshot?\n\nYour current editor contents will be replaced and unsaved changes will be lost."
+    );
+    if (!proceed) return;
     editor.setValue(entry.code);
     void history.addEdit({ ts: Date.now(), kind: "restore", code: entry.code });
     closeHistory();

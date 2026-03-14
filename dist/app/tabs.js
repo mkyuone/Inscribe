@@ -99,6 +99,7 @@ export function createTabsController(opts) {
     let dragTabId = null;
     let dragOverTabId = null;
     let dragOverPosition = null;
+    let dragInsertIndex = null;
     function getActiveTab() {
         var _a;
         return (_a = tabs.find((tab) => tab.id === activeId)) !== null && _a !== void 0 ? _a : tabs[0];
@@ -350,6 +351,7 @@ export function createTabsController(opts) {
         dragTabId = null;
         dragOverTabId = null;
         dragOverPosition = null;
+        dragInsertIndex = null;
     }
     function clearDragClasses() {
         dom.tabStrip.querySelectorAll(".tabItem").forEach((el) => {
@@ -369,20 +371,66 @@ export function createTabsController(opts) {
             }
         }
     }
-    function reorderDraggedTab() {
-        if (!dragTabId || !dragOverTabId || !dragOverPosition)
+    function getDropTargets() {
+        return Array.from(dom.tabStrip.querySelectorAll(".tabItem")).filter((el) => {
+            const tabId = el.dataset.tabId;
+            return !!tabId && tabId !== dragTabId;
+        });
+    }
+    function autoScrollTabStrip(clientX) {
+        const rect = dom.tabStrip.getBoundingClientRect();
+        const edgePadding = 40;
+        const maxStep = 18;
+        if (clientX < rect.left + edgePadding) {
+            const progress = (rect.left + edgePadding - clientX) / edgePadding;
+            dom.tabStrip.scrollLeft -= Math.ceil(progress * maxStep);
             return;
-        if (dragTabId === dragOverTabId)
+        }
+        if (clientX > rect.right - edgePadding) {
+            const progress = (clientX - (rect.right - edgePadding)) / edgePadding;
+            dom.tabStrip.scrollLeft += Math.ceil(progress * maxStep);
+        }
+    }
+    function updateDragTargetFromPointer(clientX) {
+        var _a, _b;
+        if (!dragTabId)
+            return;
+        const targets = getDropTargets();
+        if (!targets.length) {
+            dragOverTabId = null;
+            dragOverPosition = null;
+            dragInsertIndex = 0;
+            return;
+        }
+        let insertIndex = targets.length;
+        for (let i = 0; i < targets.length; i += 1) {
+            const rect = targets[i].getBoundingClientRect();
+            const midpoint = rect.left + rect.width / 2;
+            if (clientX < midpoint) {
+                insertIndex = i;
+                break;
+            }
+        }
+        dragInsertIndex = insertIndex;
+        if (insertIndex < targets.length) {
+            dragOverTabId = (_a = targets[insertIndex].dataset.tabId) !== null && _a !== void 0 ? _a : null;
+            dragOverPosition = "before";
+            return;
+        }
+        const lastTarget = targets[targets.length - 1];
+        dragOverTabId = (_b = lastTarget.dataset.tabId) !== null && _b !== void 0 ? _b : null;
+        dragOverPosition = "after";
+    }
+    function reorderDraggedTab() {
+        if (!dragTabId || dragInsertIndex === null)
             return;
         const sourceIdx = tabs.findIndex((tab) => tab.id === dragTabId);
-        const targetIdx = tabs.findIndex((tab) => tab.id === dragOverTabId);
-        if (sourceIdx < 0 || targetIdx < 0)
+        if (sourceIdx < 0)
             return;
         const sourceTab = tabs[sourceIdx];
         const nextTabs = tabs.filter((tab) => tab.id !== dragTabId);
-        const adjustedTargetIdx = sourceIdx < targetIdx ? targetIdx - 1 : targetIdx;
-        const insertIdx = dragOverPosition === "before" ? adjustedTargetIdx : adjustedTargetIdx + 1;
-        nextTabs.splice(Math.max(0, Math.min(insertIdx, nextTabs.length)), 0, sourceTab);
+        const insertIdx = Math.max(0, Math.min(dragInsertIndex, nextTabs.length));
+        nextTabs.splice(insertIdx, 0, sourceTab);
         tabs = nextTabs;
         renderTabs();
         persistDebounced();
@@ -420,6 +468,7 @@ export function createTabsController(opts) {
         dragTabId = tabId;
         dragOverTabId = null;
         dragOverPosition = null;
+        dragInsertIndex = null;
         if (event.dataTransfer) {
             event.dataTransfer.effectAllowed = "move";
             event.dataTransfer.setData("text/plain", tabId);
@@ -429,29 +478,19 @@ export function createTabsController(opts) {
     dom.tabStrip.addEventListener("dragover", (event) => {
         if (!dragTabId)
             return;
-        const target = event.target;
-        const tabItem = target === null || target === void 0 ? void 0 : target.closest(".tabItem");
-        if (!tabItem)
-            return;
-        const tabId = tabItem.dataset.tabId;
-        if (!tabId || tabId === dragTabId)
-            return;
         event.preventDefault();
         if (event.dataTransfer) {
             event.dataTransfer.dropEffect = "move";
         }
-        const rect = tabItem.getBoundingClientRect();
-        const nextPosition = event.clientX < rect.left + rect.width / 2 ? "before" : "after";
-        if (dragOverTabId === tabId && dragOverPosition === nextPosition)
-            return;
-        dragOverTabId = tabId;
-        dragOverPosition = nextPosition;
+        autoScrollTabStrip(event.clientX);
+        updateDragTargetFromPointer(event.clientX);
         applyDragClasses();
     });
     dom.tabStrip.addEventListener("drop", (event) => {
         if (!dragTabId)
             return;
         event.preventDefault();
+        updateDragTargetFromPointer(event.clientX);
         reorderDraggedTab();
         clearDragState();
         clearDragClasses();

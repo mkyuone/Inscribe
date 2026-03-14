@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 import { formatDuration } from "../utils/time.js";
+import { APP_BANNER } from "../app-meta.js";
 import { BUILD_TIME } from "../version.js";
 export function createPyodideController(state, addConsoleLine, updateStatusBar, refocusEditor, getCodeForMode, getRunModeLabel, runBtn, runModeBtn, runGroup, prefs, resetStdoutBuffer, beginRunCapture, flushStdoutBuffer, getRunStdout, handleStdout, requestInput, cancelActiveInput, showIsolationWarning, confirmAsyncioRun, onReadyToast, onVariables, onRunFinished) {
     const inputMaxBytes = 64 * 1024;
@@ -151,7 +152,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
                     dim: true,
                     system: true
                 });
-                addConsoleLine("Inscribe v3.1 / (c) Mark Yu, py.mkyu.one", {
+                addConsoleLine(APP_BANNER, {
                     dim: true,
                     system: true
                 });

@@ -20,6 +20,7 @@ export type DomRefs = {
   moreMenu: HTMLDivElement;
   shareMenuBtn: HTMLButtonElement;
   historyBtn: HTMLButtonElement;
+  shortcutsBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
   settingsBtn: HTMLButtonElement;
   aboutBtn: HTMLButtonElement;
@@ -65,6 +66,9 @@ export type DomRefs = {
   aboutCommitHash: HTMLSpanElement;
   settingsOverlay: HTMLDivElement;
   closeSettingsBtn: HTMLButtonElement;
+  openShortcutsBtn: HTMLButtonElement;
+  shortcutsOverlay: HTMLDivElement;
+  closeShortcutsBtn: HTMLButtonElement;
   printOverlay: HTMLDivElement;
   printBtn: HTMLButtonElement;
   printCancelBtn: HTMLButtonElement;
@@ -150,6 +154,7 @@ export function getDomRefs(): DomRefs {
     moreMenu: byId<HTMLDivElement>("moreMenu"),
     shareMenuBtn: byId<HTMLButtonElement>("shareMenuBtn"),
     historyBtn: byId<HTMLButtonElement>("historyBtn"),
+    shortcutsBtn: byId<HTMLButtonElement>("shortcutsBtn"),
     resetBtn: byId<HTMLButtonElement>("resetBtn"),
     settingsBtn: byId<HTMLButtonElement>("settingsBtn"),
     aboutBtn: byId<HTMLButtonElement>("aboutBtn"),
@@ -195,6 +200,9 @@ export function getDomRefs(): DomRefs {
     aboutCommitHash: byId<HTMLSpanElement>("aboutCommitHash"),
     settingsOverlay: byId<HTMLDivElement>("settingsOverlay"),
     closeSettingsBtn: byId<HTMLButtonElement>("closeSettingsBtn"),
+    openShortcutsBtn: byId<HTMLButtonElement>("openShortcutsBtn"),
+    shortcutsOverlay: byId<HTMLDivElement>("shortcutsOverlay"),
+    closeShortcutsBtn: byId<HTMLButtonElement>("closeShortcutsBtn"),
     printOverlay: byId<HTMLDivElement>("printOverlay"),
     printBtn: byId<HTMLButtonElement>("printBtn"),
     printCancelBtn: byId<HTMLButtonElement>("printCancelBtn"),

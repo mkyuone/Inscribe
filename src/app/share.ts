@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2026 Mark Yu
 
 import { DomRefs } from "./dom-refs.js";
+import { createToastVisibility } from "./toast.js";
 
 type ToastFn = (title: string, desc: string, icon?: string) => void;
 
@@ -21,20 +22,21 @@ export function createShareController(
   refocusEditor: () => void
 ): ShareController {
   let toastTimer: ReturnType<typeof setTimeout> | null = null;
+  const shareToastVisibility = createToastVisibility(dom.shareToast);
 
   function showToast(title: string, desc: string, icon = "check_circle") {
     dom.shareToastTitle.textContent = title;
     dom.shareToastDesc.textContent = desc;
     dom.shareToastIcon.textContent = icon;
-    dom.shareToast.classList.add("show");
+    shareToastVisibility.show();
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
-      dom.shareToast.classList.remove("show");
+      shareToastVisibility.hide();
     }, 2800);
   }
 
   dom.shareToast.addEventListener("click", () => {
-    dom.shareToast.classList.remove("show");
+    shareToastVisibility.hide();
   });
 
   function bytesToBase64Url(bytes: Uint8Array) {

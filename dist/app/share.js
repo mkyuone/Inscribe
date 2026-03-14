@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
+import { createToastVisibility } from "./toast.js";
 const SHARE_PREFIX = "v1:";
 export function createShareController(dom, getCode, addConsoleLine, saveFile, refocusEditor) {
     let toastTimer = null;
+    const shareToastVisibility = createToastVisibility(dom.shareToast);
     function showToast(title, desc, icon = "check_circle") {
         dom.shareToastTitle.textContent = title;
         dom.shareToastDesc.textContent = desc;
         dom.shareToastIcon.textContent = icon;
-        dom.shareToast.classList.add("show");
+        shareToastVisibility.show();
         if (toastTimer)
             clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
-            dom.shareToast.classList.remove("show");
+            shareToastVisibility.hide();
         }, 2800);
     }
     dom.shareToast.addEventListener("click", () => {
-        dom.shareToast.classList.remove("show");
+        shareToastVisibility.hide();
     });
     function bytesToBase64Url(bytes) {
         let binary = "";
