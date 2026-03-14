@@ -75,13 +75,7 @@ Build TypeScript (emits `dist/`):
 ./scripts/build.sh
 ```
 
-Serve locally (Pyodide requires HTTP, not `file://`):
-
-```sh
-python3 -m http.server
-```
-
-For blocking `input()` and `time.sleep()` support, serve with COOP/COEP headers:
+Serve locally:
 
 ```sh
 python3 scripts/serve.py
