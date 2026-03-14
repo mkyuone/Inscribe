@@ -116,9 +116,9 @@ export function getFileIcon(path, mime = "") {
     if (isImagePath(path, mime))
         return "image";
     if (isJsonPath(path, mime))
-        return "data_object";
+        return "description";
     if (isCsvPath(path, mime))
-        return "table_chart";
+        return "view_list";
     if (getExtension(path) === "py")
         return "code";
     if (isTextPath(path, mime))

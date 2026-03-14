@@ -3,6 +3,7 @@
 import { escapeHtml } from "../utils/dom.js";
 import { isMac } from "../utils/platform.js";
 export function createRefocusEditor(dom, editor) {
+    let pendingFocusFrame = 0;
     return () => {
         [
             dom.openBtn,
@@ -24,7 +25,15 @@ export function createRefocusEditor(dom, editor) {
             dom.workspaceUploadFolderChoiceBtn,
             dom.workspaceUploadCancelBtn
         ].forEach((b) => b && b.blur());
-        requestAnimationFrame(() => editor.focus());
+        if (pendingFocusFrame) {
+            cancelAnimationFrame(pendingFocusFrame);
+        }
+        pendingFocusFrame = requestAnimationFrame(() => {
+            pendingFocusFrame = 0;
+            if (document.querySelector(".workspaceRenameInput, .tabRenameInput"))
+                return;
+            editor.focus();
+        });
     };
 }
 export function createUiController(dom, editor, refocusEditor, onRunDefault, onRunCell, onSaveFile, onOpenFile, onOpenPrintModal, onOpenSettings, onNewTab, onRenameTab, onNextTab, onPreviousTab) {

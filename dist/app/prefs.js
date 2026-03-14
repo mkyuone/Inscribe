@@ -77,6 +77,10 @@ export function applyPrefs(prefs, editor, dom) {
     dom.workspaceToggleBtn.classList.toggle("active", workspaceVisible);
     dom.workspaceToggleBtn.title = workspaceVisible ? "Hide workspace sidebar" : "Show workspace sidebar";
     dom.workspaceToggleBtn.setAttribute("aria-label", workspaceVisible ? "Hide workspace sidebar" : "Show workspace sidebar");
+    const workspaceToggleIcon = dom.workspaceToggleBtn.querySelector(".material-icons");
+    if (workspaceToggleIcon) {
+        workspaceToggleIcon.textContent = workspaceVisible ? "chevron_left" : "chevron_right";
+    }
     dom.openBtn.title = workspaceFeatureEnabled
         ? "Import files or project (Cmd/Ctrl + O)"
         : "Open file (Cmd/Ctrl + O)";

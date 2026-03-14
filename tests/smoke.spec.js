@@ -258,6 +258,27 @@ test("shows formatted preview for JSON workspace files", async ({ page }) => {
   await expect(page.locator("#filePreviewBody")).toContainText('"beta": [');
 });
 
+test("recovers from MemoryError on the next run", async ({ page }) => {
+  await waitForEditor(page);
+  await waitForPyodideReady(page);
+
+  await setEditorValue(page, "raise MemoryError('boom')\n");
+  await page.click("#runBtn");
+
+  await expect(page.locator("#console")).toContainText("Finished with errors.", { timeout: 30000 });
+  await expect(page.locator("#console")).toContainText(
+    "Pyodide ran out of memory and was restarted. Run again to continue.",
+    { timeout: 30000 }
+  );
+  await expect(page.locator("#varsList")).toContainText("No user variables yet.");
+
+  await setEditorValue(page, "value = 42\nprint(value)\n");
+  await page.click("#runBtn");
+
+  await expect(page.locator("#console")).toContainText("42", { timeout: 30000 });
+  await expect(page.locator("#varsList")).toContainText("value", { timeout: 30000 });
+});
+
 test("workspace upload modal opens and file rows rename inline", async ({ page }) => {
   await waitForEditor(page);
   await showWorkspace(page);
@@ -283,4 +304,61 @@ test("workspace upload modal opens and file rows rename inline", async ({ page }
 
   await expect(page.locator('.workspaceFile .workspaceLabel', { hasText: "renamed.py" })).toBeVisible();
   await expect(page.locator(".tabName", { hasText: "renamed.py" })).toBeVisible();
+
+  await page.click("#workspaceRenameBtn");
+  await expect(renameInput).toBeVisible();
+  await renameInput.fill("renamed-again.py");
+  await renameInput.press("Enter");
+
+  await expect(page.locator('.workspaceFile .workspaceLabel', { hasText: "renamed-again.py" })).toBeVisible();
+  await expect(page.locator(".tabName", { hasText: "renamed-again.py" })).toBeVisible();
+});
+
+test("workspace removal uses a custom warning modal", async ({ page }) => {
+  await waitForEditor(page);
+  await showWorkspace(page);
+
+  await page.setInputFiles("#fileInput", [
+    {
+      name: "delete-me.py",
+      mimeType: "text/x-python",
+      buffer: Buffer.from("print('bye')\n")
+    }
+  ]);
+
+  await page.locator('.workspaceFile .workspaceLabel', { hasText: "delete-me.py" }).click();
+  await page.click("#workspaceDeleteBtn");
+
+  await expect(page.locator("#workspaceRemoveOverlay")).toHaveClass(/active/);
+  await expect(page.locator("#workspaceRemoveText")).toContainText("delete-me.py");
+
+  await page.click("#workspaceRemoveCancelBtn");
+  await expect(page.locator("#workspaceRemoveOverlay")).not.toHaveClass(/active/);
+  await expect(page.locator('.workspaceFile .workspaceLabel', { hasText: "delete-me.py" })).toBeVisible();
+
+  await page.click("#workspaceDeleteBtn");
+  await page.click("#workspaceRemoveConfirmBtn");
+  await expect(page.locator('.workspaceFile .workspaceLabel', { hasText: "delete-me.py" })).toHaveCount(0);
+});
+
+test("share link copies a working URL", async ({ page, context, browser }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await waitForEditor(page);
+
+  await setEditorValue(page, "print('shared link works')\n");
+  await page.click("#shareBtn");
+  await expect(page.locator("#shareToast")).toContainText("Share link copied", { timeout: 30000 });
+
+  const sharedUrl = await page.evaluate(async () => navigator.clipboard.readText());
+  expect(sharedUrl).toContain("#");
+
+  const verifyContext = await browser.newContext();
+  const verifyPage = await verifyContext.newPage();
+  await verifyPage.goto(sharedUrl);
+  await waitForEditorSurface(verifyPage);
+  await expect.poll(() => getEditorValue(verifyPage)).toBe("print('shared link works')\n");
+  await expect(verifyPage.locator("#shareToast")).toContainText("Shared code loaded", {
+    timeout: 30000
+  });
+  await verifyContext.close();
 });

@@ -38,6 +38,8 @@ export type UiController = {
 };
 
 export function createRefocusEditor(dom: DomRefs, editor: CodeMirrorEditor) {
+  let pendingFocusFrame = 0;
+
   return () => {
     [
       dom.openBtn,
@@ -59,7 +61,14 @@ export function createRefocusEditor(dom: DomRefs, editor: CodeMirrorEditor) {
       dom.workspaceUploadFolderChoiceBtn,
       dom.workspaceUploadCancelBtn
     ].forEach((b) => b && b.blur());
-    requestAnimationFrame(() => editor.focus());
+    if (pendingFocusFrame) {
+      cancelAnimationFrame(pendingFocusFrame);
+    }
+    pendingFocusFrame = requestAnimationFrame(() => {
+      pendingFocusFrame = 0;
+      if (document.querySelector(".workspaceRenameInput, .tabRenameInput")) return;
+      editor.focus();
+    });
   };
 }
 

@@ -105,6 +105,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
     const RUN_STOP_SWITCH_DELAY_MS = 600;
     let runStopStateTimer = null;
     let activeRunToken = 0;
+    let pendingFatalMemory = false;
     const runIcon = runBtn.querySelector(".material-icons");
     const runLabelEl = runBtn.querySelector("#runLabel");
     const hintRunEl = runBtn.querySelector("#hintRun");
@@ -155,16 +156,19 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         state.pyodideReady = ready;
         updateStatusBar();
     }
-    function disposeWorker() {
-        if (worker) {
+    function disposeWorker(opts = {}) {
+        const workerToDispose = worker;
+        worker = null;
+        if (workerToDispose) {
             try {
-                postToWorker({ type: "reset" });
+                if (opts.notifyWorker !== false) {
+                    workerToDispose.postMessage({ type: "reset" });
+                }
             }
             catch {
                 // ignore worker teardown errors
             }
-            worker.terminate();
-            worker = null;
+            workerToDispose.terminate();
         }
         stdinSab = null;
         stdinI32 = null;
@@ -173,9 +177,10 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         interruptI32 = null;
     }
     function handleFatalMemoryExhaustion() {
-        disposeWorker();
+        disposeWorker({ notifyWorker: false });
         resetStdoutBuffer();
         setReady(false);
+        pendingFatalMemory = false;
         onVariables({ items: [], truncated: false });
         addConsoleLine("Pyodide ran out of memory and was restarted. Run again to continue.", {
             dim: true,
@@ -217,13 +222,26 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         interruptSab = new SharedArrayBuffer(4);
         interruptI32 = new Int32Array(interruptSab);
         const workerUrl = `dist/worker/pyodide-worker.js?v=${encodeURIComponent(BUILD_TIME)}`;
-        worker = new Worker(workerUrl);
-        worker.onmessage = (event) => {
+        const nextWorker = new Worker(workerUrl);
+        worker = nextWorker;
+        nextWorker.onmessage = (event) => {
+            if (worker !== nextWorker)
+                return;
             handleWorkerMessage(event.data);
         };
-        worker.onerror = (event) => {
+        nextWorker.onerror = (event) => {
+            if (worker !== nextWorker)
+                return;
             addConsoleLine(`Worker error: ${event.message || "unknown"}`, { error: true });
+            disposeWorker({ notifyWorker: false });
             setReady(false);
+            onVariables({ items: [], truncated: false });
+            if (runResolve) {
+                runResolve(false);
+                runResolve = null;
+            }
+            runCompletionPromise = null;
+            updateStatusBar();
         };
         const initMessage = {
             type: "init",
@@ -278,6 +296,10 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
                 flushStdoutBuffer();
                 break;
             case "error-line":
+                if (message.text.includes("MemoryError") ||
+                    /out of memory|allocation failed|cannot allocate memory|oom|memory access out of bounds/i.test(message.text)) {
+                    pendingFatalMemory = true;
+                }
                 if (message.text.trim())
                     addConsoleLine(message.text, { error: true });
                 break;
@@ -291,9 +313,10 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             case "run-complete":
                 lastRunDurationMs =
                     typeof message.durationMs === "number" ? message.durationMs : null;
-                if (message.fatal === "memory") {
+                if (message.fatal === "memory" || pendingFatalMemory) {
                     handleFatalMemoryExhaustion();
                 }
+                pendingFatalMemory = false;
                 if (runResolve) {
                     runResolve(message.ok);
                     runResolve = null;
@@ -343,6 +366,7 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
         resetStdoutBuffer();
         beginRunCapture();
         lastRunDurationMs = null;
+        pendingFatalMemory = false;
         let didRun = false;
         let runOk = false;
         let durationMs = 0;
@@ -405,6 +429,11 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
                 if (l.trim())
                     addConsoleLine(l, { error: true });
             });
+            if (msg.includes("MemoryError") ||
+                /out of memory|allocation failed|cannot allocate memory|oom|memory access out of bounds/i.test(msg)) {
+                pendingFatalMemory = true;
+                handleFatalMemoryExhaustion();
+            }
             addConsoleLine("Finished with errors.", { dim: true, system: true });
         }
         finally {
@@ -456,20 +485,12 @@ export function createPyodideController(state, addConsoleLine, updateStatusBar, 
             dim: true,
             system: true
         });
-        if (worker) {
-            worker.terminate();
-            worker = null;
-        }
+        disposeWorker({ notifyWorker: false });
         if (runResolve) {
             runResolve(false);
             runResolve = null;
         }
         runCompletionPromise = null;
-        stdinSab = null;
-        stdinI32 = null;
-        stdinU8 = null;
-        interruptSab = null;
-        interruptI32 = null;
         setReady(false);
     }
     function warmStart() {

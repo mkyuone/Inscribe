@@ -121,6 +121,8 @@ export function createShareController(dom, getCode, addConsoleLine, saveFile, re
                 dom.shareWarnCancelBtn.removeEventListener("click", onCancel);
                 dom.shareWarnDownloadBtn.removeEventListener("click", onDownload);
                 dom.shareWarnConfirmBtn.removeEventListener("click", onConfirm);
+                dom.shareWarnOverlay.removeEventListener("click", onBackdrop);
+                window.removeEventListener("keydown", onKeyDown, true);
             };
             const onCancel = () => {
                 closeShareWarn();
@@ -138,9 +140,21 @@ export function createShareController(dom, getCode, addConsoleLine, saveFile, re
                 cleanup();
                 resolve(true);
             };
+            const onBackdrop = (event) => {
+                if (event.target === dom.shareWarnOverlay)
+                    onCancel();
+            };
+            const onKeyDown = (event) => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    onCancel();
+                }
+            };
             dom.shareWarnCancelBtn.addEventListener("click", onCancel);
             dom.shareWarnDownloadBtn.addEventListener("click", onDownload);
             dom.shareWarnConfirmBtn.addEventListener("click", onConfirm);
+            dom.shareWarnOverlay.addEventListener("click", onBackdrop);
+            window.addEventListener("keydown", onKeyDown, true);
         });
     }
     async function copyToClipboard(text) {

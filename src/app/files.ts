@@ -163,7 +163,7 @@ export function createFileController(
       })),
       { replaceAll: true, activeName: bundle.activePath }
     );
-    onNotify("Project imported", `${bundle.files.length} file(s) restored.`, "folder_copy");
+    onNotify("Project imported", `${bundle.files.length} file(s) restored.`, "folder");
     return true;
   }
 
@@ -247,7 +247,7 @@ export function createFileController(
     await importSelectedFiles(input, {
       allowBundle: true,
       successTitle: "Files imported",
-      successIcon: "upload_file",
+      successIcon: "file_upload",
       emptyTitle: "Open cancelled"
     });
   });
@@ -256,7 +256,7 @@ export function createFileController(
     await importSelectedFiles(e.target as HTMLInputElement, {
       allowBundle: false,
       successTitle: "Folder imported",
-      successIcon: "drive_folder_upload",
+      successIcon: "folder_open",
       emptyTitle: "Folder import cancelled"
     });
   });

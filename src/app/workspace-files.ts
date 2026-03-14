@@ -138,8 +138,8 @@ export function isTextPath(path: string, mime = "") {
 
 export function getFileIcon(path: string, mime = "") {
   if (isImagePath(path, mime)) return "image";
-  if (isJsonPath(path, mime)) return "data_object";
-  if (isCsvPath(path, mime)) return "table_chart";
+  if (isJsonPath(path, mime)) return "description";
+  if (isCsvPath(path, mime)) return "view_list";
   if (getExtension(path) === "py") return "code";
   if (isTextPath(path, mime)) return "description";
   return "insert_drive_file";

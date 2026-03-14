@@ -117,6 +117,11 @@ export type DomRefs = {
   projectImportText: HTMLDivElement;
   projectImportCancelBtn: HTMLButtonElement;
   projectImportConfirmBtn: HTMLButtonElement;
+  workspaceRemoveOverlay: HTMLDivElement;
+  workspaceRemoveText: HTMLDivElement;
+  workspaceRemoveHint: HTMLDivElement;
+  workspaceRemoveCancelBtn: HTMLButtonElement;
+  workspaceRemoveConfirmBtn: HTMLButtonElement;
   asyncWarnOverlay: HTMLDivElement;
   asyncWarnText: HTMLDivElement;
   asyncWarnCancelBtn: HTMLButtonElement;
@@ -274,6 +279,11 @@ export function getDomRefs(): DomRefs {
     projectImportText: byId<HTMLDivElement>("projectImportText"),
     projectImportCancelBtn: byId<HTMLButtonElement>("projectImportCancelBtn"),
     projectImportConfirmBtn: byId<HTMLButtonElement>("projectImportConfirmBtn"),
+    workspaceRemoveOverlay: byId<HTMLDivElement>("workspaceRemoveOverlay"),
+    workspaceRemoveText: byId<HTMLDivElement>("workspaceRemoveText"),
+    workspaceRemoveHint: byId<HTMLDivElement>("workspaceRemoveHint"),
+    workspaceRemoveCancelBtn: byId<HTMLButtonElement>("workspaceRemoveCancelBtn"),
+    workspaceRemoveConfirmBtn: byId<HTMLButtonElement>("workspaceRemoveConfirmBtn"),
     asyncWarnOverlay: byId<HTMLDivElement>("asyncWarnOverlay"),
     asyncWarnText: byId<HTMLDivElement>("asyncWarnText"),
     asyncWarnCancelBtn: byId<HTMLButtonElement>("asyncWarnCancelBtn"),

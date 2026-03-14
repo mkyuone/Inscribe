@@ -296,7 +296,46 @@ export async function boot() {
       state.isDirty = dirty;
       updateStatusBar(state, dom);
     },
-    onNotify: notifySystem
+    onNotify: notifySystem,
+    confirmCloseTab: (tab) =>
+      new Promise<boolean>((resolve) => {
+        dom.workspaceRemoveText.textContent = `Remove ${tab.name} from the current workspace?`;
+        dom.workspaceRemoveHint.textContent = tab.dirty
+          ? "This file has unsaved changes that will be lost."
+          : "You can add it back later by importing it again.";
+        dom.workspaceRemoveOverlay.classList.add("active");
+
+        const cleanup = () => {
+          dom.workspaceRemoveCancelBtn.removeEventListener("click", onCancel);
+          dom.workspaceRemoveConfirmBtn.removeEventListener("click", onConfirm);
+          dom.workspaceRemoveOverlay.removeEventListener("click", onBackdrop);
+          window.removeEventListener("keydown", onKeyDown, true);
+        };
+        const onCancel = () => {
+          dom.workspaceRemoveOverlay.classList.remove("active");
+          cleanup();
+          resolve(false);
+        };
+        const onConfirm = () => {
+          dom.workspaceRemoveOverlay.classList.remove("active");
+          cleanup();
+          resolve(true);
+        };
+        const onBackdrop = (event: MouseEvent) => {
+          if (event.target === dom.workspaceRemoveOverlay) onCancel();
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            onCancel();
+          }
+        };
+
+        dom.workspaceRemoveCancelBtn.addEventListener("click", onCancel);
+        dom.workspaceRemoveConfirmBtn.addEventListener("click", onConfirm);
+        dom.workspaceRemoveOverlay.addEventListener("click", onBackdrop);
+        window.addEventListener("keydown", onKeyDown, true);
+      })
   });
 
   if (storedWorkspace.source === "idb-backup") {
@@ -558,7 +597,7 @@ export async function boot() {
       notifySystem(
         "Workspace sidebar",
         visible ? "Shown" : "Hidden",
-        visible ? "left_panel_open" : "left_panel_close"
+        visible ? "folder_open" : "folder"
       );
     }
   }
@@ -620,7 +659,6 @@ export async function boot() {
   dom.workspaceDownloadBtn.addEventListener("click", () => fileCtrl.downloadActiveFile());
   dom.workspaceDeleteBtn.addEventListener("click", () => {
     tabsCtrl?.closeActiveTab();
-    refocusEditor();
   });
   dom.workspaceCloseBtn.addEventListener("click", () => {
     setWorkspaceSidebarVisible(false);

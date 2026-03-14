@@ -193,7 +193,7 @@
           </button>
 
           <button class="toolBtn collapse" id="workspaceToggleBtn" type="button" title="Show workspace sidebar" aria-label="Toggle workspace sidebar" aria-pressed="false">
-            <span class="material-icons" aria-hidden="true">folder_copy</span>
+            <span class="material-icons" aria-hidden="true">chevron_right</span>
             <span class="toolLabel">Workspace</span>
           </button>
 
@@ -275,11 +275,11 @@
           <div class="workspacePaneHeader">
             <div class="workspacePaneHeaderTop">
               <div class="workspacePaneTitle">
-                <span class="material-icons" aria-hidden="true">folder_copy</span>
+                <span class="material-icons" aria-hidden="true">folder</span>
                 <span>Workspace</span>
               </div>
               <button class="iconBtn" id="workspaceCloseBtn" type="button" title="Hide workspace sidebar">
-                <span class="material-icons" aria-hidden="true">left_panel_close</span>
+                <span class="material-icons" aria-hidden="true">chevron_left</span>
               </button>
             </div>
             <div class="workspaceActions">
@@ -287,10 +287,10 @@
                 <span class="material-icons" aria-hidden="true">note_add</span>
               </button>
               <button class="iconBtn" id="workspaceUploadBtn" type="button" title="Upload to workspace">
-                <span class="material-icons" aria-hidden="true">upload_file</span>
+                <span class="material-icons" aria-hidden="true">file_upload</span>
               </button>
               <button class="iconBtn" id="workspaceRenameBtn" type="button" title="Rename active file">
-                <span class="material-icons" aria-hidden="true">drive_file_rename_outline</span>
+                <span class="material-icons" aria-hidden="true">edit</span>
               </button>
               <button class="iconBtn" id="workspaceDownloadBtn" type="button" title="Download active file">
                 <span class="material-icons" aria-hidden="true">download</span>
@@ -329,7 +329,7 @@
                 </button>
                 <div class="menu" id="editorActionsMenu" role="menu" aria-label="Editor actions">
                   <button class="menuItem" id="renameTabBtn" type="button" role="menuitem">
-                    <span class="material-icons" aria-hidden="true">drive_file_rename_outline</span>
+                    <span class="material-icons" aria-hidden="true">edit</span>
                     <span class="miLabel">Rename file</span>
                     <span class="miHint">F2</span>
                   </button>
@@ -750,14 +750,14 @@ View the full license text on GitHub:
 
       <div class="workspaceUploadChoices">
         <button class="workspaceUploadChoice" id="workspaceUploadFileChoiceBtn" type="button">
-          <span class="material-icons" aria-hidden="true">upload_file</span>
+          <span class="material-icons" aria-hidden="true">file_upload</span>
           <span class="workspaceUploadChoiceText">
             <strong>Files</strong>
             <span>Add individual files to the current workspace.</span>
           </span>
         </button>
         <button class="workspaceUploadChoice" id="workspaceUploadFolderChoiceBtn" type="button">
-          <span class="material-icons" aria-hidden="true">drive_folder_upload</span>
+          <span class="material-icons" aria-hidden="true">folder_open</span>
           <span class="workspaceUploadChoiceText">
             <strong>Folder</strong>
             <span>Import a folder and keep its internal structure.</span>
@@ -784,7 +784,25 @@ View the full license text on GitHub:
 
       <div class="modalRow">
         <button class="toolBtn" id="projectImportCancelBtn" type="button">Cancel</button>
-        <button class="toolBtn primary" id="projectImportConfirmBtn" type="button">Replace workspace</button>
+        <button class="toolBtn danger" id="projectImportConfirmBtn" type="button">Replace workspace</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="workspaceRemoveOverlay" role="dialog" aria-modal="true" aria-labelledby="workspaceRemoveTitle">
+    <div class="modal modalSettings">
+      <div class="warnBlock">
+        <span class="material-icons" aria-hidden="true">warning</span>
+        <div>
+          <h2 id="workspaceRemoveTitle">Remove File from Workspace?</h2>
+          <div class="warnText" id="workspaceRemoveText">Removing this file will take it out of the current workspace.</div>
+          <div class="warnHint" id="workspaceRemoveHint">Unsaved changes will be lost.</div>
+        </div>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="workspaceRemoveCancelBtn" type="button">Cancel</button>
+        <button class="toolBtn danger" id="workspaceRemoveConfirmBtn" type="button">Remove file</button>
       </div>
     </div>
   </div>

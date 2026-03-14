@@ -60,6 +60,7 @@ type TabsControllerOptions = {
   onActiveFilenameChange: (name: string) => void;
   onAnyDirtyChange: (dirty: boolean) => void;
   onNotify: NotifyFn;
+  confirmCloseTab: (tab: TabDoc) => Promise<boolean>;
 };
 
 export type TabsController = {
@@ -218,7 +219,8 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     refocusEditor,
     onActiveFilenameChange,
     onAnyDirtyChange,
-    onNotify
+    onNotify,
+    confirmCloseTab
   } = opts;
 
   let tabs: TabDoc[] = [];
@@ -252,6 +254,13 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   let dragOverTabId: string | null = null;
   let dragOverPosition: DropPosition | null = null;
   let dragInsertIndex: number | null = null;
+  let workspaceRefocusTimer: number | null = null;
+  let lastWorkspacePointerDown:
+    | {
+        tabId: string;
+        at: number;
+      }
+    | null = null;
   const collapsedFolders = new Set<string>();
 
   function getActiveTab() {
@@ -523,7 +532,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
       item.dataset.tabId = tab.id;
       item.draggable = tab.id !== renamingTabId;
 
-      if (tab.id === renamingTabId) {
+      if (tab.id === renamingTabId && renameTarget === "tab") {
         const renameInput = document.createElement("input");
         renameInput.type = "text";
         renameInput.className = "tabRenameInput";
@@ -574,7 +583,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     }
     dom.tabStrip.appendChild(addBtn);
     scrollActiveTabIntoView();
-    if (renamingTabId) {
+    if (renamingTabId && renameTarget === "tab") {
       requestAnimationFrame(() => {
         const input = dom.tabStrip.querySelector<HTMLInputElement>(`.tabRenameInput[data-tab-id="${renamingTabId}"]`);
         if (!input) return;
@@ -608,15 +617,15 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     syncEditorToActiveTab();
   }
 
-  function closeTab(id: string) {
+  async function closeTab(id: string) {
     if (tabs.length === 1) return;
     const toClose = tabs.find((tab) => tab.id === id);
     if (!toClose) return;
-
-    const message = toClose.dirty
-      ? `Remove ${toClose.name} from the workspace?\n\nThis file has unsaved changes that will be lost.`
-      : `Remove ${toClose.name} from the workspace?`;
-    if (!window.confirm(message)) return;
+    const proceed = await confirmCloseTab(toClose);
+    if (!proceed) {
+      refocusEditor();
+      return;
+    }
 
     const idx = tabs.findIndex((tab) => tab.id === id);
     tabs = tabs.filter((tab) => tab.id !== id);
@@ -633,6 +642,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
       onAnyDirtyChange(hasDirtyTabs());
     }
     persistDebounced();
+    refocusEditor();
   }
 
   function createNewTab() {
@@ -872,8 +882,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   }
 
   function closeActiveTab() {
-    closeTab(activeId);
-    refocusEditor();
+    void closeTab(activeId);
   }
 
   function clearDragState() {
@@ -881,6 +890,13 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     dragOverTabId = null;
     dragOverPosition = null;
     dragInsertIndex = null;
+  }
+
+  function clearWorkspaceRefocusTimer() {
+    if (workspaceRefocusTimer !== null) {
+      window.clearTimeout(workspaceRefocusTimer);
+      workspaceRefocusTimer = null;
+    }
   }
 
   function clearDragClasses() {
@@ -984,6 +1000,32 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
   }
 
   dom.newTabBtn.addEventListener("click", createNewTab);
+  dom.workspaceTree.addEventListener("mousedown", (event: MouseEvent) => {
+    const target = event.target as HTMLElement | null;
+    if (target instanceof HTMLInputElement && target.dataset.action === "rename-input") return;
+    const row = target?.closest<HTMLElement>(".workspaceFile");
+    const tabId = row?.dataset.tabId;
+    if (!tabId) {
+      lastWorkspacePointerDown = null;
+      return;
+    }
+
+    const now = performance.now();
+    if (
+      lastWorkspacePointerDown &&
+      lastWorkspacePointerDown.tabId === tabId &&
+      now - lastWorkspacePointerDown.at < 450
+    ) {
+      lastWorkspacePointerDown = null;
+      clearWorkspaceRefocusTimer();
+      activateTab(tabId);
+      beginRename(tabId, "workspace");
+      event.preventDefault();
+      return;
+    }
+
+    lastWorkspacePointerDown = { tabId, at: now };
+  });
   dom.workspaceTree.addEventListener("click", (event: MouseEvent) => {
     const target = event.target as HTMLElement | null;
     if (target instanceof HTMLInputElement && target.dataset.action === "rename-input") return;
@@ -1001,8 +1043,20 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     const btn = target?.closest<HTMLElement>(".workspaceFile");
     const tabId = btn?.dataset.tabId;
     if (!tabId) return;
+    clearWorkspaceRefocusTimer();
+    if (event.detail >= 2) {
+      lastWorkspacePointerDown = null;
+      activateTab(tabId);
+      beginRename(tabId, "workspace");
+      event.preventDefault();
+      return;
+    }
     activateTab(tabId);
-    refocusEditor();
+    workspaceRefocusTimer = window.setTimeout(() => {
+      workspaceRefocusTimer = null;
+      if (renamingTabId) return;
+      refocusEditor();
+    }, 220);
   });
   dom.workspaceTree.addEventListener("dblclick", (event) => {
     const target = event.target as HTMLElement | null;
@@ -1010,6 +1064,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     const row = target?.closest<HTMLElement>(".workspaceFile");
     const tabId = row?.dataset.tabId;
     if (!tabId) return;
+    clearWorkspaceRefocusTimer();
     activateTab(tabId);
     beginRename(tabId, "workspace");
     event.preventDefault();
@@ -1039,6 +1094,8 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
       const target = event.target as HTMLElement | null;
       if (!(target instanceof HTMLInputElement)) return;
       if (target.dataset.action !== "rename-input") return;
+      if (renameTarget !== "workspace") return;
+      clearWorkspaceRefocusTimer();
       const tabId = target.dataset.tabId;
       if (!tabId || renamingTabId !== tabId) return;
       applyRename(tabId, target.value);
@@ -1102,7 +1159,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
     if (!tabId) return;
 
     if (actionEl.dataset.action === "close") {
-      closeTab(tabId);
+      void closeTab(tabId);
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -1147,6 +1204,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
       const target = event.target as HTMLElement | null;
       if (!(target instanceof HTMLInputElement)) return;
       if (target.dataset.action !== "rename-input") return;
+      if (renameTarget !== "tab") return;
       const tabId = target.dataset.tabId;
       if (!tabId || renamingTabId !== tabId) return;
       applyRename(tabId, target.value);

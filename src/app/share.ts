@@ -147,6 +147,8 @@ export function createShareController(
         dom.shareWarnCancelBtn.removeEventListener("click", onCancel);
         dom.shareWarnDownloadBtn.removeEventListener("click", onDownload);
         dom.shareWarnConfirmBtn.removeEventListener("click", onConfirm);
+        dom.shareWarnOverlay.removeEventListener("click", onBackdrop);
+        window.removeEventListener("keydown", onKeyDown, true);
       };
       const onCancel = () => {
         closeShareWarn();
@@ -164,10 +166,21 @@ export function createShareController(
         cleanup();
         resolve(true);
       };
+      const onBackdrop = (event: MouseEvent) => {
+        if (event.target === dom.shareWarnOverlay) onCancel();
+      };
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      };
 
       dom.shareWarnCancelBtn.addEventListener("click", onCancel);
       dom.shareWarnDownloadBtn.addEventListener("click", onDownload);
       dom.shareWarnConfirmBtn.addEventListener("click", onConfirm);
+      dom.shareWarnOverlay.addEventListener("click", onBackdrop);
+      window.addEventListener("keydown", onKeyDown, true);
     });
   }
 

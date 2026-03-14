@@ -534,7 +534,10 @@ function postEmptyVariablesSnapshot() {
 
 function isMemoryExhaustionError(err: unknown) {
   const msg = err?.toString?.() ?? String(err);
-  return msg.includes("MemoryError") || /out of memory/i.test(msg);
+  return (
+    msg.includes("MemoryError") ||
+    /out of memory|allocation failed|cannot allocate memory|oom|memory access out of bounds/i.test(msg)
+  );
 }
 
 ctx.onmessage = async (event: MessageEvent<InboundMessage>) => {
