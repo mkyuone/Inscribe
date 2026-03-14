@@ -26,12 +26,13 @@ It’s designed to be minimal, fast, and distraction‑free—ideal for learning
 - Open/save files using the browser File APIs
 - Editor preferences (font sizes, wrap, execution time, layout, theme)
 - Resizable editor/console split (vertical or horizontal)
-- Persistent settings and draft recovery via `localStorage`
+- Persistent settings and local workspace recovery
 - Light/dark/automatic themes with editor + UI styling
 
 <details>
 <summary><strong>Recent changes</strong></summary>
 
+- v3.5: Tabbed multi-document editing, find/replace, variables panel, UI polish, smoke tests, and hardened local session recovery.
 - v3.4: Local version history (diff preview/restore), share link enhancements, and UI polish.
 - v3.3: Runtime UX and settings polish.
 - v3.2: Worker-based runtime for blocking `input()` and `time.sleep()`. COOP/COEP headers and local dev server.
