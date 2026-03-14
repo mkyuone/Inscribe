@@ -209,8 +209,10 @@ def _inscribe_collect_vars():
         t = type(v).__name__
         try:
             r = repr(v)
-        except Exception:
-            r = "<repr failed>"
+        except Exception as err:
+            err_type = type(err).__name__
+            err_msg = str(err).strip()
+            r = f"<repr failed: {err_type}{': ' + err_msg if err_msg else ''}>"
         if len(r) > 140:
             r = r[:137] + "..."
         item = {"name": k, "type": t, "repr": r}
