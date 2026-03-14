@@ -45,6 +45,7 @@ export function applyPrefs(prefs, editor, dom) {
     dom.editorSizeLabel.textContent = `${prefs.editorFontSize.toFixed(2)}px`;
     dom.consoleSizeLabel.textContent = `${prefs.consoleFontSize.toFixed(2)}px`;
     dom.wrapToggle.checked = !!prefs.lineWrap;
+    dom.activeLineToggle.checked = !!prefs.highlightActiveLine;
     dom.splitToggle.checked = !!prefs.splitHorizontal;
     dom.execTimeToggle.checked = !!prefs.showExecTime;
     dom.themeAuto.checked = prefs.theme === "system";
@@ -55,6 +56,7 @@ export function applyPrefs(prefs, editor, dom) {
     if (themeColor) {
         themeColor.setAttribute("content", resolvedTheme === "dark" ? "#0b0f1a" : "#2563eb");
     }
+    document.documentElement.dataset.activeLine = prefs.highlightActiveLine ? "on" : "off";
 }
 export function bindPrefsUI(prefs, editor, dom, onChange) {
     var _a, _b;
@@ -72,6 +74,12 @@ export function bindPrefsUI(prefs, editor, dom, onChange) {
     });
     dom.wrapToggle.addEventListener("change", () => {
         prefs.lineWrap = !!dom.wrapToggle.checked;
+        savePrefs(prefs);
+        applyPrefs(prefs, editor, dom);
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    });
+    dom.activeLineToggle.addEventListener("change", () => {
+        prefs.highlightActiveLine = !!dom.activeLineToggle.checked;
         savePrefs(prefs);
         applyPrefs(prefs, editor, dom);
         onChange === null || onChange === void 0 ? void 0 : onChange();

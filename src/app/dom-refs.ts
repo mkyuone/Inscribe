@@ -125,6 +125,7 @@ export type DomRefs = {
   editorSizeLabel: HTMLSpanElement;
   consoleSizeLabel: HTMLSpanElement;
   wrapToggle: HTMLInputElement;
+  activeLineToggle: HTMLInputElement;
   splitToggle: HTMLInputElement;
   execTimeToggle: HTMLInputElement;
   themeAuto: HTMLInputElement;
@@ -259,6 +260,7 @@ export function getDomRefs(): DomRefs {
     editorSizeLabel: byId<HTMLSpanElement>("editorSizeLabel"),
     consoleSizeLabel: byId<HTMLSpanElement>("consoleSizeLabel"),
     wrapToggle: byId<HTMLInputElement>("wrapToggle"),
+    activeLineToggle: byId<HTMLInputElement>("activeLineToggle"),
     splitToggle: byId<HTMLInputElement>("splitToggle"),
     execTimeToggle: byId<HTMLInputElement>("execTimeToggle"),
     themeAuto: byId<HTMLInputElement>("themeAuto"),

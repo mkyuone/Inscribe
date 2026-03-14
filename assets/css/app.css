@@ -897,6 +897,14 @@
     line-height:1.56;
     background:#fff;
   }
+  .CodeMirror-activeline-background{
+    background:rgba(148,163,184,0.10);
+    box-shadow:inset 2px 0 0 rgba(37,99,235,0.10);
+  }
+  html[data-active-line="off"] .CodeMirror-activeline-background{
+    background:transparent !important;
+    box-shadow:none !important;
+  }
   .cm-searching-active{
     background:rgba(37,99,235,0.24);
     outline:1px solid rgba(37,99,235,0.6);
@@ -1609,6 +1617,9 @@
     gap:12px;
     flex-wrap:wrap;
   }
+  .settingsSection .settingsNote + .settingsRow{
+    margin-top:10px;
+  }
   .settingsLabel{
     font-size:13.5px;
     color:rgba(15,23,42,0.82);
@@ -1762,7 +1773,7 @@
     white-space:nowrap;
   }
   .settingsNote{
-    margin:6px 0 0 26px;
+    margin:3px 0 0 26px;
     font-size:12.5px;
     color:rgba(15,23,42,0.62);
   }
@@ -2215,6 +2226,10 @@
   html[data-theme="dark"] .CodeMirror-linenumber{
     color:rgba(148,163,184,0.6);
   }
+  html[data-theme="dark"] .CodeMirror-activeline-background{
+    background:rgba(148,163,184,0.08);
+    box-shadow:inset 2px 0 0 rgba(96,165,250,0.12);
+  }
   html[data-theme="dark"] .cm-searching-active{
     background:rgba(96,165,250,0.25);
     outline:1px solid rgba(147,197,253,0.75);
@@ -2495,6 +2510,7 @@
   }
   .cm-s-inscribe-dark .CodeMirror-activeline-background{
     background:rgba(148,163,184,0.08);
+    box-shadow:inset 2px 0 0 rgba(96,165,250,0.12);
   }
   .cm-s-inscribe-dark .CodeMirror-matchingbracket{
     color:#86efac;

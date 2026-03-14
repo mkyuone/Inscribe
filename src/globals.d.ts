@@ -3,6 +3,7 @@
 
 type CodeMirrorCursor = { line: number; ch: number };
 type CodeMirrorTextMarker = { clear(): void };
+type CodeMirrorLineHandle = unknown;
 
 type CodeMirrorEditor = {
   getValue(): string;
@@ -27,6 +28,16 @@ type CodeMirrorEditor = {
     to: CodeMirrorCursor,
     options?: Record<string, unknown>
   ): CodeMirrorTextMarker;
+  addLineClass(
+    line: number | CodeMirrorLineHandle,
+    where: string,
+    className: string
+  ): CodeMirrorLineHandle;
+  removeLineClass(
+    line: number | CodeMirrorLineHandle,
+    where: string,
+    className?: string
+  ): CodeMirrorLineHandle;
   scrollIntoView(
     pos: CodeMirrorCursor | { from: CodeMirrorCursor; to?: CodeMirrorCursor },
     margin?: number

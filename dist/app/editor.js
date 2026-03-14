@@ -14,6 +14,19 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
     });
     let lastSavedContent = editor.getValue();
     let suppressChange = false;
+    let activeLineHandle = null;
+    function clearActiveLine() {
+        if (!activeLineHandle)
+            return;
+        activeLineHandle = editor.removeLineClass(activeLineHandle, "background", "CodeMirror-activeline-background");
+        activeLineHandle = null;
+    }
+    function syncActiveLine() {
+        clearActiveLine();
+        if (editor.somethingSelected())
+            return;
+        activeLineHandle = editor.addLineClass(editor.getCursor().line, "background", "CodeMirror-activeline-background");
+    }
     editor.on("change", () => {
         if (suppressChange)
             return;
@@ -21,6 +34,9 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
         onDirtyChange(curr !== lastSavedContent);
         onChange === null || onChange === void 0 ? void 0 : onChange();
     });
+    editor.on("cursorActivity", syncActiveLine);
+    editor.on("focus", syncActiveLine);
+    editor.on("blur", clearActiveLine);
     function getCurrentCellCode() {
         const cursor = editor.getCursor();
         const total = editor.lineCount();
@@ -60,7 +76,9 @@ export function createEditorController(dom, prefs, onDirtyChange, onChange) {
         suppressChange = false;
         lastSavedContent = savedValue;
         onDirtyChange(value !== savedValue);
+        syncActiveLine();
     }
+    syncActiveLine();
     return {
         editor,
         getCodeForMode,

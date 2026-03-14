@@ -1,0 +1,12 @@
+{
+  "name": "inscribe-editor",
+  "private": true,
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.52.0",
+    "playwright": "1.52.0"
+  }
+}

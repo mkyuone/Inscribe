@@ -124,6 +124,7 @@ export function getDomRefs() {
         editorSizeLabel: byId("editorSizeLabel"),
         consoleSizeLabel: byId("consoleSizeLabel"),
         wrapToggle: byId("wrapToggle"),
+        activeLineToggle: byId("activeLineToggle"),
         splitToggle: byId("splitToggle"),
         execTimeToggle: byId("execTimeToggle"),
         themeAuto: byId("themeAuto"),

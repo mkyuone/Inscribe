@@ -375,24 +375,24 @@
         <span class="sbItem"><strong class="sbMono" id="sbSel">Sel 0</strong></span>
       </div>
     </footer>
-  </div>
 
-  <div class="toastViewport" aria-live="polite" aria-atomic="false">
-    <div class="toast" id="shareToast" role="status" aria-live="polite" hidden>
-      <span class="material-icons" id="shareToastIcon" aria-hidden="true">check_circle</span>
-      <div class="toastText">
-        <div class="toastTitle" id="shareToastTitle">Shared code loaded</div>
-        <div class="toastDesc" id="shareToastDesc">This editor opened code from a share link.</div>
+    <div class="toastViewport" aria-live="polite" aria-atomic="false">
+      <div class="toast" id="shareToast" role="status" aria-live="polite" hidden>
+        <span class="material-icons" id="shareToastIcon" aria-hidden="true">check_circle</span>
+        <div class="toastText">
+          <div class="toastTitle" id="shareToastTitle">Shared code loaded</div>
+          <div class="toastDesc" id="shareToastDesc">This editor opened code from a share link.</div>
+        </div>
       </div>
-    </div>
 
-    <div class="toast" id="sysToast" role="status" aria-live="polite" hidden>
-      <span class="material-icons" id="sysToastIcon" aria-hidden="true">check_circle</span>
-      <div class="toastText">
-        <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
-        <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
-        <div class="toastActions" id="sysToastActions" hidden>
-          <button class="toastAction" id="sysToastActionBtn" type="button" hidden>Undo</button>
+      <div class="toast" id="sysToast" role="status" aria-live="polite" hidden>
+        <span class="material-icons" id="sysToastIcon" aria-hidden="true">check_circle</span>
+        <div class="toastText">
+          <div class="toastTitle" id="sysToastTitle">Pyodide ready</div>
+          <div class="toastDesc" id="sysToastDesc">You can run code now.</div>
+          <div class="toastActions" id="sysToastActions" hidden>
+            <button class="toastAction" id="sysToastActionBtn" type="button" hidden>Undo</button>
+          </div>
         </div>
       </div>
     </div>
@@ -523,6 +523,13 @@ View the full license text on GitHub:
               </label>
             </div>
             <div class="settingsNote">Wrap long lines to stay within the editor width.</div>
+            <div class="settingsRow">
+              <label class="settingsLabel toggle" for="activeLineToggle">
+                <input id="activeLineToggle" type="checkbox" />
+                <span>Highlight current line</span>
+              </label>
+            </div>
+            <div class="settingsNote">Adds a subtle cursor-line highlight in the editor.</div>
           </div>
 
           <div class="settingsSection">
