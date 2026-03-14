@@ -328,6 +328,7 @@
             </div>
           </div>
           <textarea id="editor" aria-label="Python code editor">print("Hello, World!")</textarea>
+          <div class="editorStatus" id="editorStatus" aria-live="off">Ln 1, Col 1</div>
         </section>
 
         <div class="resizer" id="dragbar" role="separator" aria-orientation="horizontal"></div>
@@ -361,20 +362,6 @@
         </section>
       </div>
     </main>
-
-    <footer class="statusbar">
-      <div class="sbLeft">
-        <span class="sbItem good" id="sbRun"><span class="sbDot"></span><strong>Ready</strong></span>
-        <span class="sbItem good" id="sbDirty"><span class="sbDot"></span><strong>Saved</strong></span>
-        <span class="sbItem bad" id="sbPy"><span class="sbDot"></span><strong>Pyodide: not loaded</strong></span>
-      </div>
-
-      <div class="sbRight">
-        <span class="sbItem"><strong class="sbMono" id="sbFile">untitled.py</strong></span>
-        <span class="sbItem"><strong class="sbMono" id="sbPos">Ln 1, Col 1</strong></span>
-        <span class="sbItem"><strong class="sbMono" id="sbSel">Sel 0</strong></span>
-      </div>
-    </footer>
 
     <div class="toastViewport" aria-live="polite" aria-atomic="false">
       <div class="toast" id="shareToast" role="status" aria-live="polite" hidden>

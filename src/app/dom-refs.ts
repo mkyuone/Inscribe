@@ -107,12 +107,7 @@ export type DomRefs = {
   sysToastActionBtn: HTMLButtonElement;
   tabStrip: HTMLDivElement;
   newTabBtn: HTMLButtonElement;
-  sbRun: HTMLSpanElement;
-  sbDirty: HTMLSpanElement;
-  sbPy: HTMLSpanElement;
-  sbFile: HTMLSpanElement;
-  sbPos: HTMLSpanElement;
-  sbSel: HTMLSpanElement;
+  editorStatus: HTMLDivElement;
   hintRun: HTMLSpanElement;
   hintOpen: HTMLSpanElement;
   hintSave: HTMLSpanElement;
@@ -242,12 +237,7 @@ export function getDomRefs(): DomRefs {
     sysToastActionBtn: byId<HTMLButtonElement>("sysToastActionBtn"),
     tabStrip: byId<HTMLDivElement>("tabStrip"),
     newTabBtn: byId<HTMLButtonElement>("newTabBtn"),
-    sbRun: byId<HTMLSpanElement>("sbRun"),
-    sbDirty: byId<HTMLSpanElement>("sbDirty"),
-    sbPy: byId<HTMLSpanElement>("sbPy"),
-    sbFile: byId<HTMLSpanElement>("sbFile"),
-    sbPos: byId<HTMLSpanElement>("sbPos"),
-    sbSel: byId<HTMLSpanElement>("sbSel"),
+    editorStatus: byId<HTMLDivElement>("editorStatus"),
     hintRun: byId<HTMLSpanElement>("hintRun"),
     hintOpen: byId<HTMLSpanElement>("hintOpen"),
     hintSave: byId<HTMLSpanElement>("hintSave"),

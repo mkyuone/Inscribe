@@ -18,7 +18,9 @@ async function setEditorValue(page, value) {
 }
 
 async function waitForPyodideReady(page) {
-  await expect(page.locator("#sbPy")).toContainText("Pyodide: ready", { timeout: 30000 });
+  await expect(page.locator("#console")).toContainText("Inscribe Editor & Execution with Pyodide", {
+    timeout: 30000
+  });
 }
 
 test("loads with startup banner and active-line highlight", async ({ page }) => {
