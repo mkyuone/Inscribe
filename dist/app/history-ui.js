@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2023-2026 Mark Yu
 import { escapeHtml } from "../utils/dom.js";
+import { confirmDialog } from "./dialogs.js";
 const MAX_DIFF_LINES = 600;
 const MAX_DIFF_CHARS = 120000;
 function formatKind(kind) {
@@ -167,13 +168,19 @@ export function createHistoryUiController(dom, history, editor, refocusEditor) {
             return;
         setSelected(id);
     });
-    dom.historyRestoreBtn.addEventListener("click", () => {
+    dom.historyRestoreBtn.addEventListener("click", async () => {
         if (!selectedId)
             return;
         const entry = entries.find((e) => e.id === selectedId);
         if (!entry)
             return;
-        const proceed = window.confirm("Restore this snapshot?\n\nYour current editor contents will be replaced and unsaved changes will be lost.");
+        const proceed = await confirmDialog(dom, {
+            title: "Restore Snapshot?",
+            text: "Your current editor contents will be replaced.",
+            hint: "Unsaved changes in the current editor will be lost.",
+            confirmLabel: "Restore snapshot",
+            tone: "danger"
+        });
         if (!proceed)
             return;
         editor.setValue(entry.code);

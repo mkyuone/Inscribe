@@ -17,10 +17,10 @@ async function enableWorkspaceFeature(page) {
 
   await page.click("#moreBtn");
   await page.click("#settingsBtn");
-  page.once("dialog", async (dialog) => {
-    await dialog.accept();
-  });
   await page.click("#workspaceFeatureToggle");
+  await expect(page.locator("#confirmOverlay")).toHaveClass(/active/);
+  await expect(page.locator("#confirmText")).toContainText("Workspace projects are still under development.");
+  await page.click("#confirmOkBtn");
   await expect(page.locator("#workspaceToggleBtn")).toBeVisible();
   await expect(page.locator("#workspacePane")).toBeVisible();
   await page.click("#closeSettingsBtn");
@@ -95,10 +95,9 @@ test("loads with startup banner and active-line highlight", async ({ page }) => 
   await page.click("#moreBtn");
   await page.click("#settingsBtn");
   await expect(page.locator("#settingsOverlay")).toHaveClass(/active/);
-  page.once("dialog", async (dialog) => {
-    await dialog.accept();
-  });
   await page.click("#workspaceFeatureToggle");
+  await expect(page.locator("#confirmOverlay")).toHaveClass(/active/);
+  await page.click("#confirmOkBtn");
   await expect(page.locator("#workspaceToggleBtn")).toBeVisible();
   await expect(page.locator("#workspacePane")).toBeVisible();
   await page.click("#activeLineToggle");
@@ -189,17 +188,12 @@ test("history restore asks for confirmation", async ({ page }) => {
 
   await expect(page.locator(".historyItem")).toHaveCount(1, { timeout: 30000 });
   await page.click(".historyItem");
-
-  let dialogMessage = "";
-  page.once("dialog", async (dialog) => {
-    dialogMessage = dialog.message();
-    await dialog.dismiss();
-  });
-
   await page.click("#historyRestoreBtn");
-  await expect
-    .poll(() => dialogMessage.includes("Restore this snapshot?"))
-    .toBeTruthy();
+  await expect(page.locator("#confirmOverlay")).toHaveClass(/active/);
+  await expect(page.locator("#confirmTitle")).toHaveText("Restore Snapshot?");
+  await expect(page.locator("#confirmText")).toContainText("current editor contents will be replaced");
+  await page.click("#confirmCancelBtn");
+  await expect(page.locator("#confirmOverlay")).not.toHaveClass(/active/);
 });
 
 test("runs active file with workspace imports and generated files", async ({ page }) => {
@@ -237,8 +231,11 @@ test("runs active file with workspace imports and generated files", async ({ pag
 
   await page.locator('.workspaceFile .workspaceLabel', { hasText: "result.json" }).click();
   await expect(page.locator("#filePreviewPane")).toBeVisible();
-  await expect(page.locator("#filePreviewBody")).toContainText('"file": "main.py"');
-  await expect(page.locator("#filePreviewBody")).toContainText('"value": 6');
+  await expect(page.locator("#filePreviewBody")).toContainText("Object");
+  await expect(page.locator("#filePreviewBody")).toContainText("file");
+  await expect(page.locator("#filePreviewBody")).toContainText("main.py");
+  await expect(page.locator("#filePreviewBody")).toContainText("value");
+  await expect(page.locator("#filePreviewBody")).toContainText("6");
 });
 
 test("shows formatted preview for JSON workspace files", async ({ page }) => {
@@ -254,8 +251,10 @@ test("shows formatted preview for JSON workspace files", async ({ page }) => {
   ]);
 
   await expect(page.locator("#filePreviewPane")).toBeVisible();
-  await expect(page.locator("#filePreviewBody")).toContainText('"alpha": 1');
-  await expect(page.locator("#filePreviewBody")).toContainText('"beta": [');
+  await expect(page.locator("#filePreviewBody")).toContainText("Object");
+  await expect(page.locator("#filePreviewBody")).toContainText("alpha");
+  await expect(page.locator("#filePreviewBody")).toContainText("1");
+  await expect(page.locator("#filePreviewBody")).toContainText("beta");
 });
 
 test("recovers from MemoryError on the next run", async ({ page }) => {

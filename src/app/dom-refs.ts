@@ -117,6 +117,13 @@ export type DomRefs = {
   projectImportText: HTMLDivElement;
   projectImportCancelBtn: HTMLButtonElement;
   projectImportConfirmBtn: HTMLButtonElement;
+  confirmOverlay: HTMLDivElement;
+  confirmIcon: HTMLSpanElement;
+  confirmTitle: HTMLHeadingElement;
+  confirmText: HTMLDivElement;
+  confirmHint: HTMLDivElement;
+  confirmCancelBtn: HTMLButtonElement;
+  confirmOkBtn: HTMLButtonElement;
   workspaceRemoveOverlay: HTMLDivElement;
   workspaceRemoveText: HTMLDivElement;
   workspaceRemoveHint: HTMLDivElement;
@@ -279,6 +286,13 @@ export function getDomRefs(): DomRefs {
     projectImportText: byId<HTMLDivElement>("projectImportText"),
     projectImportCancelBtn: byId<HTMLButtonElement>("projectImportCancelBtn"),
     projectImportConfirmBtn: byId<HTMLButtonElement>("projectImportConfirmBtn"),
+    confirmOverlay: byId<HTMLDivElement>("confirmOverlay"),
+    confirmIcon: byId<HTMLSpanElement>("confirmIcon"),
+    confirmTitle: byId<HTMLHeadingElement>("confirmTitle"),
+    confirmText: byId<HTMLDivElement>("confirmText"),
+    confirmHint: byId<HTMLDivElement>("confirmHint"),
+    confirmCancelBtn: byId<HTMLButtonElement>("confirmCancelBtn"),
+    confirmOkBtn: byId<HTMLButtonElement>("confirmOkBtn"),
     workspaceRemoveOverlay: byId<HTMLDivElement>("workspaceRemoveOverlay"),
     workspaceRemoveText: byId<HTMLDivElement>("workspaceRemoveText"),
     workspaceRemoveHint: byId<HTMLDivElement>("workspaceRemoveHint"),

@@ -94,6 +94,19 @@ type TreeNode = {
   label: string;
 };
 
+type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+type JsonRenderState = {
+  remaining: number;
+  truncated: boolean;
+};
+
 function createId() {
   return `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -207,6 +220,121 @@ function parseDelimitedRows(raw: string, delimiter: string) {
     .filter((line) => line.trim().length)
     .slice(0, 20)
     .map((line) => line.split(delimiter).map((cell) => cell.trim()));
+}
+
+function describeJsonValue(value: JsonValue) {
+  if (Array.isArray(value)) {
+    return `${value.length} ${value.length === 1 ? "item" : "items"}`;
+  }
+  if (value && typeof value === "object") {
+    const keys = Object.keys(value);
+    return `${keys.length} ${keys.length === 1 ? "key" : "keys"}`;
+  }
+  if (value === null) return "null";
+  return typeof value;
+}
+
+function createJsonScalarNode(value: JsonValue) {
+  const span = document.createElement("span");
+  span.className = "workspaceJsonScalar";
+
+  if (typeof value === "string") {
+    span.classList.add("string");
+    span.textContent = JSON.stringify(value);
+    return span;
+  }
+  if (typeof value === "number") {
+    span.classList.add("number");
+    span.textContent = Number.isFinite(value) ? String(value) : "null";
+    return span;
+  }
+  if (typeof value === "boolean") {
+    span.classList.add("boolean");
+    span.textContent = value ? "true" : "false";
+    return span;
+  }
+
+  span.classList.add("null");
+  span.textContent = "null";
+  return span;
+}
+
+function createJsonNode(value: JsonValue, depth: number, state: JsonRenderState): HTMLElement {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return createJsonScalarNode(value);
+  }
+
+  const isArray = Array.isArray(value);
+  const entries = isArray
+    ? value.map((entry, index) => [String(index), entry] as const)
+    : Object.entries(value);
+
+  if (!entries.length) {
+    const empty = document.createElement("span");
+    empty.className = "workspaceJsonEmpty";
+    empty.textContent = isArray ? "[]" : "{}";
+    return empty;
+  }
+
+  const details = document.createElement("details");
+  details.className = `workspaceJsonNode ${isArray ? "array" : "object"}`;
+  details.open = depth < 2;
+
+  const summary = document.createElement("summary");
+  summary.className = "workspaceJsonSummary";
+
+  const type = document.createElement("span");
+  type.className = "workspaceJsonType";
+  type.textContent = isArray ? "Array" : "Object";
+
+  const meta = document.createElement("span");
+  meta.className = "workspaceJsonMeta";
+  meta.textContent = describeJsonValue(value);
+
+  summary.append(type, meta);
+  details.appendChild(summary);
+
+  const children = document.createElement("div");
+  children.className = "workspaceJsonChildren";
+  let didTruncateHere = false;
+
+  for (const [key, entryValue] of entries) {
+    if (state.remaining <= 0) {
+      state.truncated = true;
+      didTruncateHere = true;
+      break;
+    }
+    state.remaining -= 1;
+
+    const row = document.createElement("div");
+    row.className = "workspaceJsonRow";
+
+    const keyEl = document.createElement("div");
+    keyEl.className = "workspaceJsonKey";
+    keyEl.textContent = isArray ? `[${key}]` : key;
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "workspaceJsonValue";
+    valueEl.appendChild(createJsonNode(entryValue as JsonValue, depth + 1, state));
+
+    row.append(keyEl, valueEl);
+    children.appendChild(row);
+  }
+
+  if (didTruncateHere) {
+    const note = document.createElement("div");
+    note.className = "workspacePreviewNote";
+    note.textContent = "Preview truncated to keep large JSON files responsive.";
+    children.appendChild(note);
+  }
+
+  details.appendChild(children);
+  return details;
 }
 
 export function createTabsController(opts: TabsControllerOptions): TabsController {
@@ -446,16 +574,32 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
       title.textContent = "Formatted JSON";
       card.appendChild(title);
 
-      const pre = document.createElement("pre");
-      pre.className = "workspacePreviewCode";
       try {
-        pre.textContent = JSON.stringify(JSON.parse(tab.content), null, 2);
+        const parsed = JSON.parse(tab.content) as JsonValue;
+        const meta = document.createElement("div");
+        meta.className = "workspacePreviewMeta";
+        meta.textContent = describeJsonValue(parsed);
+        card.appendChild(meta);
+
+        const tree = document.createElement("div");
+        tree.className = "workspaceJsonTree";
+        const state = { remaining: 450, truncated: false };
+        tree.appendChild(createJsonNode(parsed, 0, state));
+        card.appendChild(tree);
       } catch {
-        pre.textContent = "JSON preview unavailable because the file is not valid JSON.";
+        const note = document.createElement("div");
+        note.className = "workspacePreviewNote";
+        note.textContent = "This file is not valid JSON yet, so Inscribe is showing the raw text instead.";
+        card.appendChild(note);
+
+        const pre = document.createElement("pre");
+        pre.className = "workspacePreviewCode workspacePreviewCodeWrap";
+        pre.textContent = tab.content;
+        card.appendChild(pre);
       }
-      card.appendChild(pre);
       dom.filePreviewMeta.textContent = `${defaultMeta} · JSON preview`;
       dom.filePreviewBody.appendChild(card);
+      dom.editorStatus.textContent = `JSON preview · ${sizeLabel}`;
       return;
     }
 
@@ -498,6 +642,7 @@ export function createTabsController(opts: TabsControllerOptions): TabsControlle
 
       dom.filePreviewMeta.textContent = `${defaultMeta} · Table preview`;
       dom.filePreviewBody.appendChild(card);
+      dom.editorStatus.textContent = `Table preview · ${sizeLabel}`;
     }
   }
 

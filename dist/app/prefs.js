@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2026 Mark Yu
 import { DEFAULT_PREFS, LS_KEYS } from "../constants.js";
 import { safeLS } from "../utils/storage.js";
+import { confirmDialog } from "./dialogs.js";
 export function loadPrefs() {
     try {
         const raw = safeLS.get(LS_KEYS.PREFS);
@@ -135,10 +136,22 @@ export function bindPrefsUI(prefs, editor, dom, onChange) {
         applyPrefs(prefs, editor, dom);
         onChange === null || onChange === void 0 ? void 0 : onChange();
     });
-    dom.workspaceFeatureToggle.addEventListener("change", () => {
+    dom.workspaceFeatureToggle.addEventListener("change", async () => {
         const nextEnabled = !!dom.workspaceFeatureToggle.checked;
         if (nextEnabled && !prefs.workspaceFeatureEnabled) {
-            window.alert("Workspace projects are still under development.");
+            dom.workspaceFeatureToggle.disabled = true;
+            const proceed = await confirmDialog(dom, {
+                title: "Enable Workspace Projects?",
+                text: "Workspace projects are still under development.",
+                hint: "You can still turn the feature back off at any time in Settings.",
+                confirmLabel: "Enable workspace",
+                icon: "construction"
+            });
+            dom.workspaceFeatureToggle.disabled = false;
+            if (!proceed) {
+                dom.workspaceFeatureToggle.checked = false;
+                return;
+            }
         }
         prefs.workspaceFeatureEnabled = nextEnabled;
         prefs.showWorkspaceSidebar = prefs.workspaceFeatureEnabled;

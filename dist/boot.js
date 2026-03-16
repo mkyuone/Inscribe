@@ -101,7 +101,16 @@ export async function boot() {
             consoleFallback.appendChild(div);
         }
         else {
-            alert("Editor failed to initialize:\n\n" + msg);
+            const shell = document.createElement("div");
+            shell.style.padding = "24px";
+            shell.style.fontFamily = "\"IBM Plex Sans\", system-ui, sans-serif";
+            shell.style.whiteSpace = "pre-wrap";
+            shell.textContent =
+                "Editor failed to initialize.\n\n" +
+                    msg +
+                    "\n\nOpen DevTools -> Console/Network for details.";
+            document.body.innerHTML = "";
+            document.body.appendChild(shell);
         }
     }
     try {

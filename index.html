@@ -789,6 +789,24 @@ View the full license text on GitHub:
     </div>
   </div>
 
+  <div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal modalSettings">
+      <div class="warnBlock">
+        <span class="material-icons" id="confirmIcon" aria-hidden="true">warning</span>
+        <div>
+          <h2 id="confirmTitle">Confirm Action</h2>
+          <div class="warnText" id="confirmText">Are you sure you want to continue?</div>
+          <div class="warnHint" id="confirmHint">This change affects the current workspace only.</div>
+        </div>
+      </div>
+
+      <div class="modalRow">
+        <button class="toolBtn" id="confirmCancelBtn" type="button">Cancel</button>
+        <button class="toolBtn primary" id="confirmOkBtn" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="workspaceRemoveOverlay" role="dialog" aria-modal="true" aria-labelledby="workspaceRemoveTitle">
     <div class="modal modalSettings">
       <div class="warnBlock">
