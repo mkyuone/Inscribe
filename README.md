@@ -8,8 +8,8 @@
 Inscribe Editor is a lightweight, in‑browser Python editor and runner powered by Pyodide (WebAssembly).
 It’s designed to be minimal, fast, and distraction‑free—ideal for learning, experimenting, or running quick Python snippets directly in your browser.
 
-> [!TIP]
-> Inscribe runs fully client‑side and supports blocking `input()` and `time.sleep()` when cross‑origin isolation (COOP/COEP) headers are enabled. For local dev, use `python3 scripts/serve.py`.
+> [!NOTE]
+> Workspace projects is still under development, to preview this feature you can turn it on in settings. 
 
 👉 Try it online: https://py.mkyu.one  
 👉 Self‑host with GitHub Pages or any static host.
