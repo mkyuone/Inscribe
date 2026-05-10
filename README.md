@@ -66,7 +66,7 @@ Perfect for learning, demos, or environments where installing Python isn’t ide
 
 - All external JS, CSS, and fonts are vendored under `assets/`
 - Pyodide is stored locally at `assets/vendor/pyodide/`
-- No CDN required — the app works fully offline once loaded
+- The app works fully offline once loaded
 
 ## Development
 
